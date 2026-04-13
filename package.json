@@ -8,7 +8,7 @@
     "dev:all": "concurrently --names \"server,client\" --prefix-colors \"blue,green\" \"npm run dev\" \"cd client && npm run dev\"",
     "build:client": "cd client && npm run build",
     "build:client:ci": "cd client && npm ci && npm run build",
-    "build": "npm run build:client && tsc",
+    "build": "npm run build:client:ci && tsc",
     "start": "NODE_ENV=production node dist/server/index.js",
     "check": "tsc --noEmit",
     "db:push": "drizzle-kit push",
