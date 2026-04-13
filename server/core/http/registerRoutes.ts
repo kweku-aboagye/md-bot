@@ -90,7 +90,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       await sendEmail({
         to,
         subject: 'MD Bot 🤖 — test email ✅',
-        body: 'If you received this, Gmail SMTP is working correctly.',
+        body: 'If you received this, MD Bot email delivery is working correctly.',
       });
       res.json({ ok: true, sentTo: to });
     } catch (err: any) {
