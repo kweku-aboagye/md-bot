@@ -18,7 +18,7 @@ import { registerZamarRoutes } from '../../modules/zamar/routes';
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   app.get('/health', (_req, res) => {
-    res.json({ ok: true });
+    res.json({ status: 'ok' });
   });
 
   app.get('/api/auth/config', (_req, res) => {
