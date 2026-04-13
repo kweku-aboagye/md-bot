@@ -1,0 +1,38 @@
+{
+  "name": "md-bot",
+  "version": "2.0.0",
+  "description": "MD Bot — local-first automation assistant for the music director at ICGC Praise Temple TX",
+  "license": "MIT",
+  "scripts": {
+    "dev": "NODE_ENV=development tsx --env-file .env server/index.ts",
+    "dev:all": "concurrently --names \"server,client\" --prefix-colors \"blue,green\" \"npm run dev\" \"cd client && npm run dev\"",
+    "build": "tsc",
+    "start": "NODE_ENV=production node dist/server/index.js",
+    "check": "tsc --noEmit",
+    "db:push": "drizzle-kit push",
+    "security:scan": "bash scripts/security-scan.sh",
+    "security:history": "bash scripts/security-history-check.sh",
+    "security:check": "npm run security:scan && npm run security:history"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.39.3",
+    "express": "^5.0.1",
+    "googleapis": "^148.0.0",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.5",
+    "pg": "^8.16.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^20.19.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^8.0.0",
+    "@types/pg": "^8.11.10",
+    "concurrently": "^9.2.1",
+    "drizzle-kit": "^0.31.4",
+    "tsx": "^4.20.5",
+    "typescript": "5.6.3"
+  }
+}

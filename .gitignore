@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+.env
+.env.*
+!.env.example
+drizzle/
+
+# Never commit local credential/key artifacts
+*.pem
+*.key
+*service-account*.json
+*-credentials*.json
+icgc-praise-temple-*.json
