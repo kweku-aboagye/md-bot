@@ -9,8 +9,16 @@ fi
 echo "Running git-history secret checks..."
 
 # Check whether sensitive file names ever existed in history
-if git rev-list --objects --all | grep -Eiq '(^| )(.*/)?(\.env(\..*)?|icgc-praise-temple-.*\.json|.*service-account.*\.json|.*credentials.*\.json)$'; then
+history_sensitive_files="$(
+  git rev-list --objects --all \
+    | awk '{print $2}' \
+    | grep -Ei '(^|/)\.env($|\.)|(^|/)icgc-praise-temple-.*\.json$|(service-account|credentials).*\.json$' \
+    | grep -Ev '(^|/)\.env\.example$' \
+    || true
+)"
+if [ -n "$history_sensitive_files" ]; then
   echo "ERROR: Sensitive file names found in git history."
+  echo "$history_sensitive_files"
   exit 1
 fi
 
