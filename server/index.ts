@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
+import path from 'path';
 import { ensureInternalTables } from './core/db';
 import { registerRoutes } from './core/http/registerRoutes';
 import { log } from './core/logging/log';
@@ -39,7 +40,7 @@ app.use('/api/test', (req, res, next) => {
 // Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
+  const reqPath = req.path;
   let captured: Record<string, any> | undefined;
 
   const originalJson = res.json.bind(res);
@@ -50,8 +51,8 @@ app.use((req, res, next) => {
 
   res.on('finish', () => {
     const duration = Date.now() - start;
-    if (path.startsWith('/api') || path === '/health') {
-      let line = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+    if (reqPath.startsWith('/api') || reqPath === '/health') {
+      let line = `${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`;
       if (captured) line += ` :: ${JSON.stringify(captured)}`;
       log(line);
     }
@@ -69,6 +70,16 @@ app.use((req, res, next) => {
 
   await registerRoutes(httpServer, app);
   await startScheduler();
+
+  // In production, serve the built React client and handle SPA routing.
+  // Must be registered after all API routes so /api/* routes take precedence.
+  if (process.env.NODE_ENV === 'production') {
+    const clientDist = path.join(__dirname, '../../client/dist');
+    app.use(express.static(clientDist));
+    app.get(/^(?!\/(?:api|health)(?:\/|$)).*/, (_req, res) => {
+      res.sendFile(path.join(clientDist, 'index.html'));
+    });
+  }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
