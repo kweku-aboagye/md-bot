@@ -18,7 +18,8 @@
  *
  * Requires env vars:
  *   ADMIN_EMAIL             — set in schema.ts constant
- *   GMAIL_USER / GMAIL_APP_PASSWORD
+ *   Either RESEND_API_KEY / RESEND_FROM_EMAIL
+ *   or GMAIL_USER / GMAIL_APP_PASSWORD
  */
 
 import { getAdminEmail, HGH_COL_DATE, HGH_COL_TITLE, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';

@@ -24,22 +24,31 @@ Backend runtime for MD Bot. The server is now organized into:
 Required for normal operation:
 
 - `GOOGLE_SERVICE_ACCOUNT_JSON`
-- `GMAIL_USER`
-- `GMAIL_APP_PASSWORD`
 - `DATABASE_URL`
 
 Required for HGH gap tracking:
 
 - `YOUTUBE_API_KEY`
 
+Required for email delivery, choose one:
+
+- `RESEND_API_KEY` and `RESEND_FROM_EMAIL`
+- `GMAIL_USER` and `GMAIL_APP_PASSWORD`
+
 Optional:
 
 - `PORT` default `5001`
+- `EMAIL_PROVIDER` set to `resend` or `gmail`; if omitted, MD Bot auto-detects `resend` first, then Gmail SMTP
 - `DASHBOARD_PIN` protects `/api/test/*`
 - `ADMIN_EMAIL` used by `/api/test/send-email`, P&W missing-leader alerts, HGH reminder/report delivery, and included in Celestial/Zamar notifications
 - `CELESTIAL_NOTIFICATION_EMAILS` comma-separated non-admin recipients for Celestial alerts; `ADMIN_EMAIL` is always included automatically
 - `ZAMAR_BAND_EMAILS` comma-separated non-admin recipients for Zamar prep emails; `ADMIN_EMAIL` is always included automatically
 - `ADMIN_PIN` legacy body-based PIN for `/api/*/validate`
+
+## Railway Note
+
+- Railway `Hobby`, `Trial`, and `Free` environments should use an HTTPS email API such as Resend instead of SMTP
+- Gmail SMTP is best kept for local development unless your Railway workspace supports outbound SMTP
 
 ## Runtime Behavior
 
