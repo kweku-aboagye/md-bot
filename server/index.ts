@@ -40,7 +40,7 @@ app.use('/api/test', (req, res, next) => {
 // Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
+  const reqPath = req.path;
   let captured: Record<string, any> | undefined;
 
   const originalJson = res.json.bind(res);
@@ -51,8 +51,8 @@ app.use((req, res, next) => {
 
   res.on('finish', () => {
     const duration = Date.now() - start;
-    if (path.startsWith('/api') || path === '/health') {
-      let line = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+    if (reqPath.startsWith('/api') || reqPath === '/health') {
+      let line = `${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`;
       if (captured) line += ` :: ${JSON.stringify(captured)}`;
       log(line);
     }
