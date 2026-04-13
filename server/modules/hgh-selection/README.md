@@ -28,6 +28,12 @@ Checks whether His Glory Heralds has logged a song for the shared target Sunday 
 - Mon–Sat `9 AM CT`
 - Mon–Sat `5 PM CT`
 
+## Email Delivery
+
+- selection reminders use the shared mailer in `server/core/email/mailer.ts`
+- manual and scheduled HGH selection runs use the same provider configuration
+- on Railway, that should normally be `Resend`
+
 ## Manual Testing
 
 - `npm run dev`

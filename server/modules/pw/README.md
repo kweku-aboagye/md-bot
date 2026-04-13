@@ -43,6 +43,12 @@ Reads the P&W Google Doc for the target Sunday week, validates each required sec
 - writes actual sent reminder emails to the shared `email_history` table
 - `GET /api/history` reads the latest stored email history rows
 
+## Email Delivery
+
+- reminder emails use the shared mailer in `server/core/email/mailer.ts`
+- manual and scheduled P&W runs use the same provider configuration
+- on Railway, that should normally be `Resend`
+
 ## Manual Testing
 
 - `npm run dev`
