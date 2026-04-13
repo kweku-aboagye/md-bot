@@ -27,7 +27,7 @@ fi
 # Known high-risk secret signatures in tracked files
 if git --no-pager grep -nEI \
   'BEGIN (RSA |EC )?PRIVATE KEY|BEGIN PRIVATE KEY|AIza[0-9A-Za-z_-]{20,}|GMAIL_APP_PASSWORD=[^[:space:]]+|DATABASE_URL=postgres(ql)?://[^[:space:]]+:[^[:space:]@]+@' \
-  -- . ':(exclude).env.example' >/dev/null; then
+  -- . ':(exclude).env.example' ':(exclude)scripts/security-scan.sh' ':(exclude)scripts/security-history-check.sh' >/dev/null; then
   echo "ERROR: Secret-like values found in tracked files."
   exit 1
 fi

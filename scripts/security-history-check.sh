@@ -15,7 +15,7 @@ if git rev-list --objects --all | grep -Eiq '(^| )(.*/)?(\.env(\..*)?|icgc-prais
 fi
 
 # Check history diffs for common secret signatures
-if git --no-pager log --all -G 'BEGIN (RSA |EC )?PRIVATE KEY|BEGIN PRIVATE KEY|GOOGLE_SERVICE_ACCOUNT_JSON=|GMAIL_APP_PASSWORD=|YOUTUBE_API_KEY=AIza|DATABASE_URL=postgres' --pretty=format:%H -- . | grep -q .; then
+if git --no-pager log --all -G 'BEGIN (RSA |EC )?PRIVATE KEY|BEGIN PRIVATE KEY|GOOGLE_SERVICE_ACCOUNT_JSON=|GMAIL_APP_PASSWORD=|YOUTUBE_API_KEY=AIza|DATABASE_URL=postgres' --pretty=format:%H -- . ':(exclude)scripts/security-scan.sh' ':(exclude)scripts/security-history-check.sh' | grep -q .; then
   echo "ERROR: Secret-like content found in git history."
   exit 1
 fi
