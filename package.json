@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx --env-file .env server/index.ts",
     "dev:all": "concurrently --names \"server,client\" --prefix-colors \"blue,green\" \"npm run dev\" \"cd client && npm run dev\"",
-    "build": "tsc",
+    "build:client": "cd client && npm install && npm run build",
+    "build": "npm run build:client && tsc",
     "start": "NODE_ENV=production node dist/server/index.js",
     "check": "tsc --noEmit",
     "db:push": "drizzle-kit push",
