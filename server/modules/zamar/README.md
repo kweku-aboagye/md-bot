@@ -26,6 +26,12 @@ Compiles the target Sunday songs from P&W, HGH, and Celestial, exposes that comb
 
 - Wednesday `12 PM CT`
 
+## Email Delivery
+
+- prep emails use the shared mailer in `server/core/email/mailer.ts`
+- manual and scheduled Zamar runs use the same provider configuration
+- on Railway, that should normally be `Resend`
+
 ## Manual Testing
 
 - `npm run dev`
