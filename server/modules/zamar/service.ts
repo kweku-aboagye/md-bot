@@ -103,21 +103,30 @@ async function getHGHSong(targetSunday: Date): Promise<ZamarSong | null> {
 
 async function getCelestialSong(targetSunday: Date): Promise<ZamarSong | null> {
   const targetISO = formatISODate(targetSunday);
+  const startRow = 2;
 
-  const rows = await readSheetTab(CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, 2);
+  const rows = await readSheetTab(CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, startRow);
 
-  for (const row of rows) {
+  for (const [index, row] of rows.entries()) {
     const rawDate = (row[CELESTIAL_COL_DATE] || '').trim();
     if (!rawDate) continue;
 
     const parsedDate = parseMDYDate(rawDate);
     if (parsedDate === targetISO) {
-      const songLink = (row[CELESTIAL_COL_SONG] || '').trim() || null;
-      if (!songLink) return null;
+      const sheetRowNumber = startRow + index;
+      const songCell = await readCellLink(
+        CELESTIAL_SHEET_ID,
+        CELESTIAL_SHEET_TAB,
+        columnIndexToLetter(CELESTIAL_COL_SONG),
+        sheetRowNumber
+      );
+      const rawTitle = (row[CELESTIAL_COL_SONG] || '').trim();
+      const title = songCell.displayText.trim() || rawTitle;
+      if (!title) return null;
 
       return {
-        title: songLink, // the cell text is the hymn title/link
-        youtubeUrl: songLink.startsWith('http') ? songLink : null,
+        title,
+        youtubeUrl: songCell.url || (rawTitle.startsWith('http') ? rawTitle : null),
         group: 'Celestial',
       };
     }

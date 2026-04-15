@@ -43,7 +43,6 @@ Optional:
 - `ADMIN_EMAIL` used by `/api/test/send-email`, P&W missing-leader alerts, HGH reminder/report delivery, and included in Celestial/Zamar notifications
 - `CELESTIAL_NOTIFICATION_EMAILS` comma-separated non-admin recipients for Celestial alerts; `ADMIN_EMAIL` is always included automatically
 - `ZAMAR_BAND_EMAILS` comma-separated non-admin recipients for Zamar prep emails; `ADMIN_EMAIL` is always included automatically
-- `ADMIN_PIN` legacy body-based PIN for `/api/*/validate`
 
 ## Railway Note
 
@@ -90,28 +89,18 @@ Optional:
 
 - `GET /health`
 - `GET /api/auth/config`
-- `GET /api/history` returns recent unified email history rows
 - `GET /api/schedule`
-- `GET /api/sundays`
 - `GET /api/pw/status`
 - `GET /api/celestial/status`
 - `GET /api/hgh-selection/status`
 - `GET /api/hgh/status`
 - `GET /api/zamar/status`
-- `GET /api/ministry/status`
 - `POST /api/test/send-email`
 - `POST /api/test/pw-reminder`
 - `POST /api/test/celestial-reminder`
 - `POST /api/test/hgh-selection-reminder`
 - `POST /api/test/hgh-gap-tracker`
 - `POST /api/test/zamar-prep`
-
-Legacy body-PIN routes remain for compatibility:
-
-- `POST /api/pw/validate`
-- `POST /api/celestial/validate`
-- `POST /api/hgh/validate`
-- `POST /api/zamar/validate`
 
 ## Schedule
 

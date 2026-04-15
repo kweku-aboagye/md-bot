@@ -14,7 +14,7 @@ interface PwSection {
 interface PwService { label?: string; sections: PwSection[] }
 interface PwStatus  { targetSunday: string; services: PwService[] }
 
-interface CelestialStatus { hymnSelected: boolean; songLink: string | null; emailSent: boolean }
+interface CelestialStatus { hymnSelected: boolean; emailSent: boolean }
 interface HghSelectionStatus { songSelected: boolean; targetSunday: string }
 
 interface GapSong { title: string; url?: string | null }
@@ -171,15 +171,9 @@ function CelestialPanel({ targetSunday }: { targetSunday: string }) {
           border: `1px solid ${T.border}`, marginBottom: 12,
         }}>
           {data.hymnSelected ? (
-            <>
-              <div style={{ fontWeight: 600, fontSize: 13, color: T.green, marginBottom: 4 }}>
-                <StatusDot ok={true} />Hymn selected ✓
-              </div>
-              {data.songLink && (
-                <a href={data.songLink} target="_blank" rel="noreferrer"
-                  style={{ fontSize: 12, color: T.indigo }}>View hymn →</a>
-              )}
-            </>
+            <div style={{ fontWeight: 600, fontSize: 13, color: T.green }}>
+              <StatusDot ok={true} />Hymn selected ✓
+            </div>
           ) : (
             <div style={{ fontWeight: 600, fontSize: 13, color: T.amber }}>
               <StatusDot ok={false} />No hymn selected for {formatSunday(targetSunday)}

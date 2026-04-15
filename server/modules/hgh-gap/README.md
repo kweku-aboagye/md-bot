@@ -21,7 +21,6 @@ Compares the HGH YouTube playlist against linked recordings in the HGH sheet to 
 
 - `GET /api/hgh/status`
 - `POST /api/test/hgh-gap-tracker`
-- `POST /api/hgh/validate`
 
 ## Schedule
 

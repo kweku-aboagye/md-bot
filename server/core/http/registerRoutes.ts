@@ -1,19 +1,12 @@
 import type { Express } from 'express';
 import type { Server } from 'http';
-import { storage } from '../db/storage';
 import { sendEmail } from '../email/mailer';
 import { log } from '../logging/log';
 import { getNextScheduledRun } from '../scheduling/scheduler';
-import { getTargetSunday } from '../scheduling/target-sunday';
-import type { MinistryStatus } from './types';
-import { checkCelestialHymn } from '../../modules/celestial/service';
 import { registerCelestialRoutes } from '../../modules/celestial/routes';
 import { registerHghGapRoutes } from '../../modules/hgh-gap/routes';
-import { runHghGapFinder } from '../../modules/hgh-gap/service';
 import { registerHghSelectionRoutes } from '../../modules/hgh-selection/routes';
-import { getPwValidationSnapshot } from '../../modules/pw/service';
 import { registerPwRoutes } from '../../modules/pw/routes';
-import { compileZamarPrepList } from '../../modules/zamar/service';
 import { registerZamarRoutes } from '../../modules/zamar/routes';
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
@@ -25,58 +18,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ pinRequired: !!process.env.DASHBOARD_PIN });
   });
 
-  app.get('/api/history', async (_req, res) => {
-    res.json(await storage.getEmailHistory(10));
-  });
-
   app.get('/api/schedule', (_req, res) => {
     res.json(getNextScheduledRun());
-  });
-
-  app.get('/api/ministry/status', async (_req, res) => {
-    const targetSunday = getTargetSunday();
-    const status: MinistryStatus = {
-      targetSunday: targetSunday.toISOString().split('T')[0],
-      ranAt: new Date().toISOString(),
-      pw: { services: [] },
-      hgh: null,
-      celestial: null,
-      zamar: null,
-    };
-
-    const [pwResult, hghResult, celestialResult, zamarResult] = await Promise.allSettled([
-      getPwValidationSnapshot(targetSunday),
-      runHghGapFinder(),
-      checkCelestialHymn(targetSunday),
-      compileZamarPrepList(targetSunday),
-    ]);
-
-    if (pwResult.status === 'fulfilled') {
-      status.pw.services = pwResult.value;
-    } else {
-      status.pw.error = pwResult.reason?.message || 'P&W check failed';
-      log(`Ministry status P&W error: ${status.pw.error}`, 'http');
-    }
-
-    if (hghResult.status === 'fulfilled') {
-      status.hgh = hghResult.value;
-    } else {
-      log(`Ministry status HGH error: ${hghResult.reason?.message}`, 'http');
-    }
-
-    if (celestialResult.status === 'fulfilled') {
-      status.celestial = celestialResult.value;
-    } else {
-      log(`Ministry status Celestial error: ${celestialResult.reason?.message}`, 'http');
-    }
-
-    if (zamarResult.status === 'fulfilled') {
-      status.zamar = zamarResult.value;
-    } else {
-      log(`Ministry status Zamar error: ${zamarResult.reason?.message}`, 'http');
-    }
-
-    res.json(status);
   });
 
   app.post('/api/test/send-email', async (_req, res) => {

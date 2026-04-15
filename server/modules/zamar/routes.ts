@@ -1,5 +1,4 @@
 import type { Express } from 'express';
-import { checkLegacyAdminPin } from '../../core/http/auth';
 import { log } from '../../core/logging/log';
 import { compileZamarPrepList, runZamarPrep } from './service';
 
@@ -20,17 +19,6 @@ export function registerZamarRoutes(app: Express) {
     } catch (err) {
       log(`Zamar prep test failed: ${String(err)}`, 'zamar.routes');
       res.status(500).json({ ok: false, message: String(err) });
-    }
-  });
-
-  app.post('/api/zamar/validate', async (req, res) => {
-    if (!checkLegacyAdminPin(req, res)) return;
-
-    try {
-      res.json(await runZamarPrep('manual'));
-    } catch (err: any) {
-      log(`Zamar validation error: ${err.message}`, 'zamar.routes');
-      res.status(500).json({ message: err.message || 'Zamar validation failed' });
     }
   });
 }

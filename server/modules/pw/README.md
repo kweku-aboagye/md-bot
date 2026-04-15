@@ -8,7 +8,7 @@ Reads the P&W Google Doc for the target Sunday week, validates each required sec
 
 - `document-reader.ts` parses the Google Doc
 - `validator.ts` computes section status and sends reminder emails
-- `service.ts` owns status, Sundays listing, and validation runs
+- `service.ts` owns status and validation runs
 - `routes.ts` mounts P&W endpoints
 
 ## Data Source
@@ -29,9 +29,7 @@ Reads the P&W Google Doc for the target Sunday week, validates each required sec
 ## Routes
 
 - `GET /api/pw/status`
-- `GET /api/sundays`
 - `POST /api/test/pw-reminder`
-- `POST /api/pw/validate`
 
 ## Schedule
 
@@ -41,7 +39,6 @@ Reads the P&W Google Doc for the target Sunday week, validates each required sec
 ## Persistence
 
 - writes actual sent reminder emails to the shared `email_history` table
-- `GET /api/history` reads the latest stored email history rows
 
 ## Email Delivery
 
@@ -54,4 +51,4 @@ Reads the P&W Google Doc for the target Sunday week, validates each required sec
 - `npm run dev`
 - `GET /api/pw/status`
 - `POST /api/test/pw-reminder`
-- verify `GET /api/history` records the sent reminder emails
+- verify the reminder route returns a successful result when ministry data is incomplete

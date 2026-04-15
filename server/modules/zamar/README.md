@@ -20,7 +20,6 @@ Compiles the target Sunday songs from P&W, HGH, and Celestial, exposes that comb
 
 - `GET /api/zamar/status`
 - `POST /api/test/zamar-prep`
-- `POST /api/zamar/validate`
 
 ## Schedule
 
