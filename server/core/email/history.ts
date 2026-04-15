@@ -19,20 +19,6 @@ export type EmailHistoryKind =
 
 export type EmailHistoryPayload = Record<string, unknown>;
 
-export interface EmailHistoryEntry {
-  id: string;
-  runId: string;
-  module: EmailHistoryModule;
-  kind: EmailHistoryKind;
-  trigger: EmailTrigger;
-  recipient: string;
-  subject: string;
-  targetSunday: string | null;
-  sentAt: string;
-  messageId: string | null;
-  payload: EmailHistoryPayload;
-}
-
 export interface EmailHistoryRecordInput {
   runId: string;
   module: EmailHistoryModule;

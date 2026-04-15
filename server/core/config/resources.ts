@@ -60,7 +60,6 @@ export const CELESTIAL_SHEET_TAB = 'Current';
 
 export const HGH_COL_TITLE = 0;
 export const HGH_COL_DATE = 1;
-export const HGH_COL_LEADER = 2;
 
 export const CELESTIAL_COL_DATE = 0;
 export const CELESTIAL_COL_SONG = 1;

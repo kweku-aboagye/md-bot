@@ -24,6 +24,13 @@ React + Vite frontend for the local MD Bot dashboard.
   - Monday `9 AM CT`: HGH gap report
   - Wednesday `12 PM CT`: Zamar prep
 
+## Production Behavior
+
+- the dashboard is a manual control surface for the same backend services used by the scheduler
+- `/api/test/*` routes trigger the real server-side module flows, not mock previews
+- email success in the dashboard depends on the server's configured provider, which is typically `Resend` on Railway
+- the client itself does not talk to Resend directly
+
 ## Commands
 
 - `npm run dev` starts the client on `http://localhost:3000`
@@ -45,3 +52,4 @@ npm run dev:all
 - the client calls `GET /api/auth/config`
 - when `pinRequired` is true, trigger buttons prompt for `DASHBOARD_PIN`
 - the client sends that PIN as `x-dashboard-pin` to `/api/test/*`
+- long-running manual triggers can still fail if the server-side provider configuration is missing or invalid

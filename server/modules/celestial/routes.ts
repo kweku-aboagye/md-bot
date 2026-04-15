@@ -1,5 +1,4 @@
 import type { Express } from 'express';
-import { checkLegacyAdminPin } from '../../core/http/auth';
 import { log } from '../../core/logging/log';
 import { getTargetSunday } from '../../core/scheduling/target-sunday';
 import { checkCelestialHymn, runCelestialCheck } from './service';
@@ -21,17 +20,6 @@ export function registerCelestialRoutes(app: Express) {
     } catch (err) {
       log(`Celestial reminder test failed: ${String(err)}`, 'celestial.routes');
       res.status(500).json({ ok: false, message: String(err) });
-    }
-  });
-
-  app.post('/api/celestial/validate', async (req, res) => {
-    if (!checkLegacyAdminPin(req, res)) return;
-
-    try {
-      res.json(await runCelestialCheck('manual'));
-    } catch (err: any) {
-      log(`Celestial validation error: ${err.message}`, 'celestial.routes');
-      res.status(500).json({ message: err.message || 'Celestial validation failed' });
     }
   });
 }

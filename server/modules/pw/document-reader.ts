@@ -257,25 +257,3 @@ export async function getServicesForWeek(
   results.sort((a, b) => a.serviceDate.localeCompare(b.serviceDate));
   return results;
 }
-
-export async function getAllSundays(
-  documentId: string
-): Promise<{ date: string; header: string }[]> {
-  const docs = await getDocsClient();
-  const doc = await docs.documents.get({ documentId });
-  const content = doc.data.body?.content || [];
-  const paragraphs = extractParagraphs(content);
-
-  const sundays: { date: string; header: string }[] = [];
-
-  for (const p of paragraphs) {
-    const isHeading = p.style.includes('HEADING') || looksLikeDateHeader(p.text);
-    if (!isHeading) continue;
-    const headerDate = parseDateFromHeader(p.text);
-    if (headerDate && headerDate.getDay() === 0) {
-      sundays.push({ date: formatDateString(headerDate), header: p.text });
-    }
-  }
-
-  return sundays;
-}

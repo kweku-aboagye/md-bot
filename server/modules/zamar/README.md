@@ -20,11 +20,16 @@ Compiles the target Sunday songs from P&W, HGH, and Celestial, exposes that comb
 
 - `GET /api/zamar/status`
 - `POST /api/test/zamar-prep`
-- `POST /api/zamar/validate`
 
 ## Schedule
 
 - Wednesday `12 PM CT`
+
+## Email Delivery
+
+- prep emails use the shared mailer in `server/core/email/mailer.ts`
+- manual and scheduled Zamar runs use the same provider configuration
+- on Railway, that should normally be `Resend`
 
 ## Manual Testing
 

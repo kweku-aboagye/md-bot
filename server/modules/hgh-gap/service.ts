@@ -5,7 +5,6 @@ import { log } from '../../core/logging/log';
 import { buildHghGapReportEmail } from './email';
 import { runHghGapFinder } from './finder';
 
-export { fetchMinisteredVideoIds, fetchPlaylistSongs } from './finder';
 export { runHghGapFinder };
 
 export async function runHghReport(trigger: 'scheduled' | 'manual' = 'manual') {
@@ -36,9 +35,4 @@ export async function runHghReport(trigger: 'scheduled' | 'manual' = 'manual') {
 
   log(`HGH gap report sent to ${adminEmail}`, 'hgh-gap');
   return result;
-}
-
-export async function runHghGapTracker() {
-  log('Running HGH gap tracker alias using the standard report flow', 'hgh-gap');
-  return runHghReport('manual');
 }

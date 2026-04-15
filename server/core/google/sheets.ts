@@ -208,25 +208,3 @@ export async function getSheetRows(
 ): Promise<string[][]> {
   return readSheetTab(sheetId, tabName, 1);
 }
-
-/**
- * Read all rows from multiple tabs and concatenate them.
- */
-export async function readSheetTabs(
-  spreadsheetId: string,
-  tabs: Array<{ name: string; startRow?: number }>
-): Promise<string[][]> {
-  const allRows: string[][] = [];
-
-  for (const tab of tabs) {
-    try {
-      const rows = await readSheetTab(spreadsheetId, tab.name, tab.startRow ?? 1);
-      allRows.push(...rows);
-    } catch (err: any) {
-      // If a tab doesn't exist or can't be read, skip it gracefully
-      console.warn(`[googleSheets] Could not read tab "${tab.name}": ${err.message}`);
-    }
-  }
-
-  return allRows;
-}

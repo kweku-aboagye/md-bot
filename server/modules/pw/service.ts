@@ -2,10 +2,10 @@ import { DOCUMENT_ID } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
-import { getAllSundays, getServicesForWeek } from './document-reader';
+import { getServicesForWeek } from './document-reader';
 import { validateSections, sendValidationEmails } from './validator';
 import { SECTION_NAMES } from './types';
-import type { SectionData, ServiceResult, ValidationResult, WeekData } from './types';
+import type { SectionData, ValidationResult, WeekData } from './types';
 
 function withPaddedSections(weekData: WeekData): WeekData {
   const sections: SectionData[] = SECTION_NAMES.map((name) => {
@@ -26,21 +26,6 @@ export async function getPwStatus(targetSunday = getTargetSunday()) {
     targetSunday: formatISODate(targetSunday),
     services: weekServices.map(withPaddedSections),
   };
-}
-
-export async function getPwValidationSnapshot(targetSunday = getTargetSunday()): Promise<ServiceResult[]> {
-  const weekServices = await getServicesForWeek(DOCUMENT_ID, targetSunday);
-
-  return weekServices.map((service) => ({
-    serviceDate: service.serviceDate,
-    rawHeader: service.rawHeader,
-    sections: validateSections(service),
-    emailsSent: [],
-  }));
-}
-
-export async function listPwSundays() {
-  return getAllSundays(DOCUMENT_ID);
 }
 
 export async function runValidation(

@@ -1,13 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 body {
   margin: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: #f9fafb;
-  color: #111827;
+  background: #0f1117;
+  color: #e8eaf0;
 }
 
 #root {
