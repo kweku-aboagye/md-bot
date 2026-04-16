@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { T, LINKS, formatSunday } from '../theme';
 import {
   Card, SectionHeader, Badge, StatusDot,
@@ -109,29 +109,26 @@ function PWPanel({ targetSunday }: { targetSunday: string }) {
         </div>
       )}
       {data && sections.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="status-list">
           {sections.map(sec => {
             const st = sectionStatus(sec);
             const s = statusMap[st];
             const missingLinks = sec.songs.filter(song => !song.youtubeUrl).map(song => song.title);
             return (
-              <div key={sec.name} style={{
-                background: T.surface2, borderRadius: 9, padding: "11px 14px",
-                border: `1px solid ${T.border}`,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <span style={{ fontWeight: 600, fontSize: 13, color: T.text }}>{sec.name}</span>
-                    <span style={{ fontSize: 12, color: T.muted, marginLeft: 10 }}>
+              <div key={sec.name} className="status-card">
+                <div className="status-card__row">
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className="status-card__title">{sec.name}</div>
+                    <div className="status-card__meta">
                       {sec.leaderEmail
                         ? <><StatusDot ok={true} />{sec.leaderEmail}</>
                         : <><StatusDot ok={false} /><span style={{ color: T.red }}>No leader</span></>}
-                    </span>
+                    </div>
                   </div>
                   <Badge color={s.color} bg={s.bg} label={s.label} />
                 </div>
                 {missingLinks.length > 0 && (
-                  <div style={{ fontSize: 11, color: T.amber, marginTop: 4 }}>
+                  <div className="status-card__note" style={{ color: T.amber }}>
                     Missing links: {missingLinks.join(", ")}
                   </div>
                 )}
@@ -140,7 +137,7 @@ function PWPanel({ targetSunday }: { targetSunday: string }) {
           })}
         </div>
       )}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="action-row">
         <SheetLink href={LINKS.pw} label="Open P&W Doc" />
         <RunButton route="/api/test/pw-reminder" label="Send Reminder" onDone={reload} disabled={remindersSatisfied} />
       </div>
@@ -165,23 +162,22 @@ function CelestialPanel({ targetSunday }: { targetSunday: string }) {
       {loading && <LoadingState />}
       {error && <ErrorState message={error} onRetry={reload} />}
       {data && (
-        <div style={{
-          background: T.surface2, borderRadius: 9, padding: "14px 16px",
-          borderLeft: `3px solid ${data.hymnSelected ? T.green : T.amber}`,
-          border: `1px solid ${T.border}`, marginBottom: 12,
-        }}>
+        <div
+          className="status-card status-card--highlight"
+          style={{ '--status-color': data.hymnSelected ? T.green : T.amber } as CSSProperties}
+        >
           {data.hymnSelected ? (
-            <div style={{ fontWeight: 600, fontSize: 13, color: T.green }}>
+            <div className="status-card__title" style={{ color: T.green }}>
               <StatusDot ok={true} />Hymn selected ✓
             </div>
           ) : (
-            <div style={{ fontWeight: 600, fontSize: 13, color: T.amber }}>
+            <div className="status-card__title" style={{ color: T.amber }}>
               <StatusDot ok={false} />No hymn selected for {formatSunday(targetSunday)}
             </div>
           )}
         </div>
       )}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="action-row">
         <SheetLink href={LINKS.celestial} label="Open Celestial Sheet" />
         <RunButton route="/api/test/celestial-reminder" label="Send Reminder" onDone={reload} disabled={!!data?.hymnSelected} />
       </div>
@@ -206,23 +202,22 @@ function HGHSelectionPanel({ targetSunday }: { targetSunday: string }) {
       {loading && <LoadingState />}
       {error && <ErrorState message={error} onRetry={reload} />}
       {data && (
-        <div style={{
-          background: T.surface2, borderRadius: 9, padding: "14px 16px",
-          borderLeft: `3px solid ${data.songSelected ? T.green : T.amber}`,
-          border: `1px solid ${T.border}`, marginBottom: 12,
-        }}>
+        <div
+          className="status-card status-card--highlight"
+          style={{ '--status-color': data.songSelected ? T.green : T.amber } as CSSProperties}
+        >
           {data.songSelected ? (
-            <div style={{ fontWeight: 600, fontSize: 13, color: T.green }}>
+            <div className="status-card__title" style={{ color: T.green }}>
               <StatusDot ok={true} />Song selected ✓
             </div>
           ) : (
-            <div style={{ fontWeight: 600, fontSize: 13, color: T.amber }}>
+            <div className="status-card__title" style={{ color: T.amber }}>
               <StatusDot ok={false} />No song selected for {formatSunday(targetSunday)}
             </div>
           )}
         </div>
       )}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="action-row">
         <SheetLink href={LINKS.hgh} label="Open His Glory Heralds Sheet" />
         <SheetLink href={LINKS.hghPlaylist} label="His Glory Heralds Playlist" />
         <RunButton route="/api/test/hgh-selection-reminder" label="Send Reminder" onDone={reload} disabled={!!data?.songSelected} />
@@ -255,40 +250,31 @@ function ZamarPanel() {
         const { color, label } = groupMeta[group];
         return (
           <div key={group} style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color, marginBottom: 6, letterSpacing: "0.07em", textTransform: "uppercase" }}>
+            <div className="subsection-label" style={{ color }}>
               {label}
             </div>
             {songs.length === 0
               ? <div style={{ fontSize: 12, color: T.muted, fontStyle: "italic" }}>Nothing submitted yet</div>
               : songs.map((song, i) => (
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  padding: "7px 0", borderBottom: `1px solid ${T.border}`,
-                }}>
-                  <span style={{ color: T.muted, fontSize: 12, width: 18, flexShrink: 0 }}>{i + 1}</span>
+                <div key={i} className="song-row">
+                  <span className="song-row__index">{i + 1}</span>
                   {song.youtubeUrl
-                    ? <a href={song.youtubeUrl} target="_blank" rel="noreferrer"
-                        style={{ fontSize: 13, color: T.indigo, textDecoration: "none", flex: 1 }}>
+                    ? <a href={song.youtubeUrl} target="_blank" rel="noreferrer" className="song-row__title song-row__link">
                         {song.title}
                       </a>
-                    : <span style={{ fontSize: 13, color: T.text, flex: 1 }}>{song.title}</span>
+                    : <span className="song-row__title">{song.title}</span>
                   }
-                  {song.section && (
-                    <span style={{ fontSize: 10, color: T.muted, background: T.surface2, border: `1px solid ${T.border}`, padding: "1px 7px", borderRadius: 10, flexShrink: 0 }}>
-                      {song.section}
-                    </span>
-                  )}
-                  {!song.youtubeUrl && (
-                    <span style={{ fontSize: 10, color: T.amber, flexShrink: 0 }}>no link</span>
-                  )}
+                  <div className="song-row__meta">
+                    {song.section && <span className="pill">{song.section}</span>}
+                    {!song.youtubeUrl && <span className="warning-copy">no link</span>}
+                  </div>
                 </div>
               ))
             }
           </div>
         );
       })}
-      {/* Links: P&W Doc removed per user request */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="action-row">
         <SheetLink href={LINKS.zamar} label="Zamar Doc" />
         <RunButton route="/api/test/zamar-prep" label="Send Reminder" onDone={reload} />
       </div>
@@ -306,9 +292,13 @@ function GapTrackerPanel() {
   const unministered = data?.unministeredSongs ?? [];
   const pct          = total > 0 ? Math.round((ministered / total) * 100) : 0;
   const visible      = expanded ? unministered : unministered.slice(0, 3);
+  const progressStyle = {
+    width: `${pct}%`,
+    background: `linear-gradient(90deg, ${T.green}, ${T.teal})`,
+  } satisfies CSSProperties;
 
   return (
-    <Card style={{ gridColumn: "1 / -1" }}>
+    <Card className="dashboard-span-full">
       <SectionHeader accent={T.yellow} icon="🔍" title="His Glory Heralds Gap Report" subtitle="Shows songs not yet ministered from the playlist" />
 
       {loading && <LoadingState />}
@@ -316,70 +306,55 @@ function GapTrackerPanel() {
 
       {data && (
         <>
-          <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+          <div className="stat-grid" style={{ marginBottom: 18 }}>
             {[
               { label: "In Playlist",  value: total,              color: T.text },
               { label: "Ministered",   value: ministered,         color: T.green },
               { label: "Remaining",    value: unministered.length, color: T.yellow },
             ].map(stat => (
-              <div key={stat.label} style={{
-                flex: 1, textAlign: "center", padding: "12px 8px",
-                background: T.surface2, borderRadius: 9, border: `1px solid ${T.border}`,
-              }}>
-                <div style={{ fontSize: 24, fontWeight: 800, color: stat.color }}>{stat.value}</div>
-                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{stat.label}</div>
+              <div key={stat.label} className="stat-card">
+                <div className="stat-card__value" style={{ color: stat.color }}>{stat.value}</div>
+                <div className="stat-card__label">{stat.label}</div>
               </div>
             ))}
           </div>
 
-          <div style={{ height: 5, background: T.surface2, borderRadius: 3, marginBottom: 18, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${T.green}, ${T.teal})`, borderRadius: 3 }} />
+          <div className="progress-track">
+            <div className="progress-bar" style={progressStyle} />
           </div>
 
           {data.suggestedNext && (
-            <div style={{
-              background: T.yellowDim, borderLeft: `3px solid ${T.yellow}`,
-              padding: "11px 16px", borderRadius: "0 9px 9px 0", marginBottom: 18,
-              border: `1px solid ${T.yellow}25`,
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, marginBottom: 4, letterSpacing: "0.07em" }}>SUGGESTED NEXT</div>
+            <div className="callout">
+              <div className="callout__label">SUGGESTED NEXT</div>
               {data.suggestedNext.url
-                ? <a href={data.suggestedNext.url} target="_blank" rel="noreferrer"
-                    style={{ fontSize: 14, color: T.yellow, textDecoration: "none", fontWeight: 600 }}>
+                ? <a href={data.suggestedNext.url} target="_blank" rel="noreferrer" className="callout__link">
                     {data.suggestedNext.title}
                   </a>
-                : <span style={{ fontSize: 14, color: T.yellow, fontWeight: 600 }}>{data.suggestedNext.title}</span>
+                : <span className="callout__title">{data.suggestedNext.title}</span>
               }
             </div>
           )}
 
           {unministered.length > 0 && (
             <>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 10, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              <div className="subsection-label" style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
                 Unministered Songs
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              <div className="song-list">
                 {visible.map((song, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "8px 4px", borderBottom: `1px solid ${T.border}`,
-                  }}>
-                    <span style={{ color: T.muted, fontSize: 12, width: 22, flexShrink: 0 }}>{i + 1}</span>
+                  <div key={i} className="song-row" style={{ padding: "8px 4px" }}>
+                    <span className="song-row__index" style={{ width: 22 }}>{i + 1}</span>
                     {song.url
-                      ? <a href={song.url} target="_blank" rel="noreferrer"
-                          style={{ fontSize: 13, color: T.indigo, textDecoration: "none", flex: 1 }}>
+                      ? <a href={song.url} target="_blank" rel="noreferrer" className="song-row__title song-row__link">
                           {song.title}
                         </a>
-                      : <span style={{ fontSize: 13, color: T.text, flex: 1 }}>{song.title}</span>
+                      : <span className="song-row__title">{song.title}</span>
                     }
                   </div>
                 ))}
               </div>
               {unministered.length > 3 && (
-                <button onClick={() => setExpanded(e => !e)} style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  color: T.indigo, fontSize: 12, marginTop: 10, padding: 0,
-                }}>
+                <button type="button" onClick={() => setExpanded(e => !e)} className="ghost-button">
                   {expanded ? "Show less ↑" : `Show all ${unministered.length} songs ↓`}
                 </button>
               )}
@@ -388,7 +363,7 @@ function GapTrackerPanel() {
         </>
       )}
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="action-row">
         <SheetLink href={LINKS.hgh} label="His Glory Heralds Sheet" />
         <SheetLink href={LINKS.hghPlaylist} label="YouTube Playlist" />
         <RunButton route="/api/test/hgh-gap-tracker" label="Send Gap Report" onDone={reload} />
@@ -400,7 +375,7 @@ function GapTrackerPanel() {
 // ── Overview ──────────────────────────────────────────────────────────────────
 export function Overview({ targetSunday }: { targetSunday: string }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+    <div className="dashboard-grid">
       <PWPanel targetSunday={targetSunday} />
       <CelestialPanel targetSunday={targetSunday} />
       <HGHSelectionPanel targetSunday={targetSunday} />

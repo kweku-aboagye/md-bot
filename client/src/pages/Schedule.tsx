@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { T } from '../theme';
 import { Card, ErrorState, LoadingState, SectionHeader } from '../components/ui';
 
@@ -115,25 +115,23 @@ export function Schedule() {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="stack-16">
       <Card>
         <SectionHeader accent={T.text} icon="⏰" title="Cron Schedule" subtitle="All times Central · runs automatically, zero UI needed" />
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="stack-8">
           {ROWS.map((row, i) => (
-            <div key={i} style={{
-              display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 14px",
-              background: T.surface2, borderRadius: 9, borderLeft: `3px solid ${row.color}`,
-            }}>
-              <div style={{ minWidth: 90 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: row.color }}>{row.days}</div>
-                <div style={{ fontSize: 12, color: T.muted }}>{row.time}</div>
+            <div
+              key={i}
+              className="schedule-row"
+              style={{ '--accent-color': row.color } as CSSProperties}
+            >
+              <div className="schedule-row__time">
+                <div className="schedule-row__days">{row.days}</div>
+                <div className="schedule-row__clock">{row.time}</div>
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <div className="chip-list">
                 {row.modules.map((m, j) => (
-                  <span key={j} style={{
-                    fontSize: 12, color: T.text, background: T.surface,
-                    border: `1px solid ${T.border}`, padding: "2px 10px", borderRadius: 6,
-                  }}>{m}</span>
+                  <span key={j} className="chip">{m}</span>
                 ))}
               </div>
             </div>
@@ -146,17 +144,18 @@ export function Schedule() {
         {loading && <LoadingState />}
         {error && <ErrorState message={error} onRetry={reload} />}
         {!loading && !error && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="stack-8">
             {emails.map((e, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", gap: 12, padding: "11px 14px",
-                background: T.surface2, borderRadius: 9, borderLeft: `3px solid ${e.color}`,
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{e.trigger}</div>
-                  <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>→ {e.to}</div>
+              <div
+                key={i}
+                className="routing-row"
+                style={{ '--accent-color': e.color } as CSSProperties}
+              >
+                <div className="routing-row__copy">
+                  <div className="routing-row__title">{e.trigger}</div>
+                  <div className="routing-row__to">→ {e.to}</div>
                 </div>
-                <span style={{ fontSize: 11, color: T.muted, whiteSpace: "nowrap" }}>{e.freq}</span>
+                <span className="routing-row__freq">{e.freq}</span>
               </div>
             ))}
           </div>

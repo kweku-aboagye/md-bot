@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { T, formatSunday } from './theme';
 import { Overview } from './pages/Overview';
 import { Schedule } from './pages/Schedule';
@@ -25,56 +25,42 @@ const TABS: { id: Tab; label: string }[] = [
 export default function App() {
   const [tab, setTab] = useState<Tab>('overview');
   const targetSunday = getTargetSunday();
+  const brandStyle = {
+    background: `linear-gradient(135deg, ${T.indigo}, ${T.purple})`,
+  } satisfies CSSProperties;
 
   return (
-    <div style={{
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      background: T.bg, minHeight: "100vh", padding: "28px 16px",
-      color: T.text,
-    }}>
-      <div style={{ maxWidth: 980, margin: "0 auto" }}>
-
-        {/* Header */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 12,
-              background: `linear-gradient(135deg, ${T.indigo}, ${T.purple})`,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-            }}>🎶</div>
-            <div>
-              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: "-0.3px" }}>
-                MD Bot 🤖
-              </h1>
-              <div style={{ fontSize: 13, color: T.muted }}>ICGC Praise Temple · Music Director Dashboard</div>
+    <div className="app-shell">
+      <div className="app-container">
+        <div className="app-header">
+          <div className="app-brand-row">
+            <div className="app-brand-icon" style={brandStyle}>🎶</div>
+            <div className="app-brand-copy">
+              <h1 className="app-title">MD Bot 🤖</h1>
+              <div className="app-subtitle">ICGC Praise Temple · Music Director Dashboard</div>
             </div>
           </div>
-          <div style={{ fontSize: 13, color: T.muted }}>
+          <div className="app-target-date">
             Target Sunday —{" "}
-            <span style={{ color: T.faint, fontWeight: 600 }}>{formatSunday(targetSunday)}</span>
+            <span className="app-target-date-value">{formatSunday(targetSunday)}</span>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{
-          display: "flex", gap: 2, marginBottom: 22,
-          background: T.surface, border: `1px solid ${T.border}`,
-          borderRadius: 10, padding: 4, width: "fit-content",
-        }}>
+        <div className="app-tabs" role="tablist" aria-label="Dashboard views">
           {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding: "6px 18px", borderRadius: 7, border: "none", cursor: "pointer",
-              fontSize: 13, fontWeight: 600, transition: "all 0.15s",
-              background: tab === t.id ? T.surface2 : "transparent",
-              color: tab === t.id ? T.text : T.muted,
-              boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.3)" : "none",
-            }}>
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`app-tab${tab === t.id ? ' is-active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
               {t.label}
             </button>
           ))}
         </div>
 
-        {/* Tab content */}
         {tab === 'overview'   && <Overview targetSunday={targetSunday} />}
         {tab === 'schedule'   && <Schedule />}
       </div>

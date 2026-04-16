@@ -1,9 +1,54 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface-2: #22263a;
+  --border: #2a2d3e;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --faint: #9ca3af;
+  --indigo: #818cf8;
+  --amber: #fbbf24;
+  --green: #34d399;
+  --purple: #a78bfa;
+  --teal: #2dd4bf;
+  --red: #f87171;
+  --yellow: #facc15;
+  --shadow-strong: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --shell-x: clamp(12px, 3vw, 16px);
+  --shell-y: clamp(16px, 3.2vw, 28px);
+  --card-padding: clamp(16px, 2.8vw, 22px);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: #0f1117;
-  color: #e8eaf0;
+  background: var(--bg);
+  color: var(--text);
+  min-width: 320px;
+  overflow-x: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
 }
 
 #root {
