@@ -35,6 +35,8 @@ const TONES = {
   },
 } as const;
 
+const EMAIL_FONT_STACK = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -70,18 +72,21 @@ export function buildReminderEmail(options: ReminderEmailOptions): ReminderEmail
   const footerLabel = options.footerLabel ?? 'MD Bot 🤖';
 
   const metaHtml = options.metaLine
-    ? `<p style="color: #666; font-size: 13px; margin: 0 0 24px;">${escapeHtml(options.metaLine)}</p>`
+    ? `<p style="margin: 0 0 20px; color: #666666; font-size: 13px; line-height: 1.5; word-break: break-word;">${escapeHtml(options.metaLine)}</p>`
     : '';
 
   const highlightLinesHtml = (options.highlightLines ?? [])
     .map(
       (line) =>
-        `<p style="margin: 4px 0 0; color: #666; font-size: 14px;">${escapeHtml(line)}</p>`
+        `<p style="margin: 6px 0 0; color: #666666; font-size: 14px; line-height: 1.5; word-break: break-word;">${escapeHtml(line)}</p>`
     )
     .join('');
 
   const paragraphsHtml = options.paragraphs
-    .map((paragraph) => `<p style="margin: 0 0 16px; line-height: 1.6;">${escapeHtml(paragraph)}</p>`)
+    .map(
+      (paragraph) =>
+        `<p style="margin: 0 0 16px; color: #1a1a1a; font-size: 15px; line-height: 1.6; word-break: break-word;">${escapeHtml(paragraph)}</p>`
+    )
     .join('');
 
   const bulletsHtml =
@@ -89,7 +94,10 @@ export function buildReminderEmail(options: ReminderEmailOptions): ReminderEmail
       ? `
       <ul style="margin: 0 0 20px 20px; padding: 0; color: #1a1a1a;">
         ${options.bullets
-          .map((bullet) => `<li style="margin: 0 0 8px; line-height: 1.5;">${escapeHtml(bullet)}</li>`)
+          .map(
+            (bullet) =>
+              `<li style="margin: 0 0 8px; font-size: 15px; line-height: 1.5; word-break: break-word;">${escapeHtml(bullet)}</li>`
+          )
           .join('')}
       </ul>`
       : '';
@@ -97,27 +105,43 @@ export function buildReminderEmail(options: ReminderEmailOptions): ReminderEmail
   const actionHtml = options.action
     ? `
       <p style="margin: 0 0 16px;">
-        <a href="${escapeHtml(options.action.url)}" style="color: #2563eb; text-decoration: none; font-weight: 600;">
+        <a href="${escapeHtml(options.action.url)}" style="color: #2563eb; text-decoration: none; font-weight: 600; word-break: break-word;">
           ${escapeHtml(options.action.label)} &rarr;
         </a>
       </p>`
     : '';
 
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 620px; margin: 0 auto; color: #1a1a1a;">
-      <h2 style="margin: 0 0 4px;">${escapeHtml(options.title)}</h2>
-      ${metaHtml}
+    <div style="margin: 0; padding: 0; background: #f5f7fb;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; background: #f5f7fb;">
+        <tr>
+          <td align="center" style="padding: 24px 12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 620px; border-collapse: collapse; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px;">
+              <tr>
+                <td style="padding: 24px 20px; font-family: ${EMAIL_FONT_STACK}; color: #1a1a1a;">
+                  <h2 style="margin: 0 0 4px; font-size: 24px; line-height: 1.25; word-break: break-word;">${escapeHtml(options.title)}</h2>
+                  ${metaHtml}
 
-      <div style="background: ${tone.background}; border-left: 3px solid ${tone.accent}; padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px;">
-        <p style="margin: 0; font-weight: 600;">${escapeHtml(options.highlightTitle)}</p>
-        ${highlightLinesHtml}
-      </div>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin: 0 0 24px; background: ${tone.background}; border-left: 3px solid ${tone.accent}; border-radius: 0 10px 10px 0;">
+                    <tr>
+                      <td style="padding: 16px;">
+                        <p style="margin: 0; font-size: 16px; font-weight: 600; line-height: 1.5; word-break: break-word;">${escapeHtml(options.highlightTitle)}</p>
+                        ${highlightLinesHtml}
+                      </td>
+                    </tr>
+                  </table>
 
-      ${paragraphsHtml}
-      ${bulletsHtml}
-      ${actionHtml}
+                  ${paragraphsHtml}
+                  ${bulletsHtml}
+                  ${actionHtml}
 
-      <p style="color: #666; font-size: 13px; margin-top: 32px; border-top: 1px solid #eee; padding-top: 16px;">&mdash; ${escapeHtml(footerLabel)}</p>
+                  <p style="color: #666666; font-size: 13px; line-height: 1.5; margin: 32px 0 0; border-top: 1px solid #eeeeee; padding-top: 16px;">&mdash; ${escapeHtml(footerLabel)}</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </div>
   `;
 

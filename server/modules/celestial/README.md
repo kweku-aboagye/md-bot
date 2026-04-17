@@ -33,6 +33,7 @@ Checks whether Celestial Choir has selected a hymn for the shared target Sunday,
 ## Email Delivery
 
 - missing-hymn reminders use the shared mailer in `server/core/email/mailer.ts`
+- missing-hymn HTML is built through the shared responsive reminder template in `server/core/email/reminder-template.ts`
 - manual and scheduled Celestial runs use the same provider configuration
 - on Railway, that should normally be `Resend`
 

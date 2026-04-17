@@ -52,6 +52,7 @@ Optional:
 ## Email Delivery Behavior
 
 - `server/core/email/mailer.ts` is the single shared delivery path for all outgoing ministry emails
+- shared outgoing HTML email templates are written to render cleanly in modern mobile clients such as Gmail mobile and iOS Mail
 - manual `/api/test/*` routes and scheduled cron runs both call the same mailer
 - if Railway is configured with `EMAIL_PROVIDER=resend`, scheduled production jobs will also send through Resend
 - if `EMAIL_PROVIDER` is omitted, the mailer auto-selects `resend` when `RESEND_API_KEY` exists, otherwise Gmail SMTP when Gmail credentials exist
