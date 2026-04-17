@@ -199,19 +199,25 @@ export async function runZamarPrep(
     });
     result.emailSent = true;
     log(`Zamar prep list sent to ${recipients.join(', ')}`, 'zamar');
-
-    const phones = await getPhonesForEmails(recipients);
-    if (phones.length > 0) {
-      await sendTrackedSms({
-        to: phones,
-        body: `[MD Bot] Zamar prep list for Sun ${result.targetSunday} is ready (${result.songs.length} songs). Check your email for details.`,
-        module: 'zamar',
-        trigger,
-        runId,
-      });
-    }
   } catch (err: any) {
-    log(`Failed to send Zamar prep list: ${err.message}`, 'zamar');
+    log(`Failed to send Zamar prep list email: ${err.message}`, 'zamar');
+  }
+
+  if (result.emailSent) {
+    try {
+      const phones = await getPhonesForEmails(recipients);
+      if (phones.length > 0) {
+        await sendTrackedSms({
+          to: phones,
+          body: `[MD Bot] Zamar prep list for Sun ${result.targetSunday} is ready (${result.songs.length} songs). Check your email for details.`,
+          module: 'zamar',
+          trigger,
+          runId,
+        });
+      }
+    } catch (err: any) {
+      log(`Failed to send Zamar prep list SMS: ${err.message}`, 'zamar');
+    }
   }
 
   return result;

@@ -22,7 +22,7 @@ export async function getPhonesForEmails(emails: string[]): Promise<string[]> {
     .select({ phone: phoneContacts.phone })
     .from(phoneContacts)
     .where(inArray(phoneContacts.email, normalized));
-  return rows.map((r) => r.phone);
+  return [...new Set(rows.map((r) => r.phone))];
 }
 
 export async function upsertContact(contact: {

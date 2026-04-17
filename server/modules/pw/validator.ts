@@ -106,7 +106,11 @@ export async function sendValidationEmails(
           sentAt: new Date().toISOString(),
         });
         log(`Admin email sent to ${adminEmail} for missing leader in ${v.sectionName}`, 'validator');
+      } catch (err: any) {
+        log(`Failed to send admin email for ${v.sectionName}: ${err.message}`, 'validator');
+      }
 
+      try {
         const adminPhone = getAdminPhone();
         if (adminPhone) {
           await sendTrackedSms({
@@ -118,7 +122,7 @@ export async function sendValidationEmails(
           });
         }
       } catch (err: any) {
-        log(`Failed to send admin email for ${v.sectionName}: ${err.message}`, 'validator');
+        log(`Failed to send admin SMS for ${v.sectionName}: ${err.message}`, 'validator');
       }
       continue;
     }
@@ -157,7 +161,11 @@ export async function sendValidationEmails(
           sentAt: new Date().toISOString(),
         });
         log(`Reminder sent to ${v.leaderEmail} for ${v.sectionName}`, 'validator');
+      } catch (err: any) {
+        log(`Failed to send reminder email to ${v.leaderEmail}: ${err.message}`, 'validator');
+      }
 
+      try {
         const leaderPhone = await getPhoneForEmail(v.leaderEmail);
         if (leaderPhone) {
           await sendTrackedSms({
@@ -169,7 +177,7 @@ export async function sendValidationEmails(
           });
         }
       } catch (err: any) {
-        log(`Failed to send reminder to ${v.leaderEmail}: ${err.message}`, 'validator');
+        log(`Failed to send reminder SMS to ${v.leaderEmail}: ${err.message}`, 'validator');
       }
     }
   }
