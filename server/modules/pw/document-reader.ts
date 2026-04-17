@@ -124,7 +124,8 @@ function extractParagraphs(content: any[]): ParagraphInfo[] {
         const uri = rlProps.uri || '';
         if (isYoutubeUrl(uri)) {
           linkUrl = uri;
-          fullText += rlProps.title || uri;
+          // Do not append the rich link title/URI to fullText.
+          // The song title is what the leader typed; the YouTube chip is the URL only.
         } else {
           fullText += rlProps.title || uri;
         }
