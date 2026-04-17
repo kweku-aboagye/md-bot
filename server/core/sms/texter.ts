@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { db } from '../db';
 import { smsHistory } from '../db/schema';
 import { log } from '../logging/log';
@@ -12,45 +13,32 @@ export interface SendTrackedSmsArgs {
 
 function isTwilioConfigured(): boolean {
   return !!(
-    process.env.TWILIO_ACCOUNT_SID &&
-    process.env.TWILIO_AUTH_TOKEN &&
-    process.env.TWILIO_FROM_NUMBER
+    process.env.TWILIO_ACCOUNT_SID?.trim() &&
+    process.env.TWILIO_AUTH_TOKEN?.trim() &&
+    process.env.TWILIO_FROM_NUMBER?.trim()
   );
-}
-
-function generateId(): string {
-  return `sms_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
 function maskPhone(phone: string): string {
   return phone.slice(0, 3) + '•'.repeat(Math.max(0, phone.length - 5)) + phone.slice(-2);
 }
 
-async function sendViaTwilio(to: string, body: string): Promise<string | null> {
+async function createTwilioClient() {
   // Dynamic import defers Twilio loading until send time so the app can boot without Twilio configured
   const twilio = await import('twilio');
-  const client = twilio.default(
+  return twilio.default(
     process.env.TWILIO_ACCOUNT_SID!,
     process.env.TWILIO_AUTH_TOKEN!
   );
-
-  const message = await client.messages.create({
-    body,
-    from: process.env.TWILIO_FROM_NUMBER!,
-    to,
-  });
-
-  return message.sid ?? null;
 }
 
 export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<void> {
-  if (!isTwilioConfigured()) {
-    log('Twilio not configured — skipping SMS', 'texter');
-    return;
-  }
+  if (!isTwilioConfigured()) return;
 
   const recipients = Array.isArray(args.to) ? args.to : [args.to];
   if (recipients.length === 0) return;
+
+  const client = await createTwilioClient();
 
   await Promise.all(
     recipients.map(async (phone) => {
@@ -59,10 +47,13 @@ export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<void> {
       let error: string | null = null;
 
       try {
-        messageSid = await sendViaTwilio(phone, args.body);
-        if (!messageSid) {
-          throw new Error('Twilio returned no message SID');
-        }
+        const message = await client.messages.create({
+          body: args.body,
+          from: process.env.TWILIO_FROM_NUMBER!,
+          to: phone,
+        });
+        messageSid = message.sid ?? null;
+        if (!messageSid) throw new Error('Twilio returned no message SID');
         log(`SMS sent to ${maskPhone(phone)} (${args.module})`, 'texter');
       } catch (err: any) {
         status = 'failed';
@@ -72,7 +63,7 @@ export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<void> {
 
       try {
         await db.insert(smsHistory).values({
-          id: generateId(),
+          id: `sms_${randomUUID()}`,
           runId: args.runId,
           module: args.module,
           trigger: args.trigger,

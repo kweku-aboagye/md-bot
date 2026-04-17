@@ -7,9 +7,12 @@ function maskPhone(phone: string): string {
 }
 
 const upsertSchema = z.object({
-  email: z.string().email(),
-  phone: z.string().regex(/^\+1\d{10}$/, 'Phone must be E.164 format: +1XXXXXXXXXX'),
-  name: z.string().optional(),
+  email: z.string().trim().email(),
+  phone: z.string().trim().regex(/^\+1\d{10}$/, 'Phone must be E.164 format: +1XXXXXXXXXX'),
+  name: z.string().optional().transform((v) => {
+    const trimmed = v?.trim();
+    return trimmed || undefined;
+  }),
 });
 
 export function registerContactsRoutes(app: Express): void {

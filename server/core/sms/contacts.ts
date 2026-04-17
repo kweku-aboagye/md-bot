@@ -1,10 +1,7 @@
+import { randomUUID } from 'crypto';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import { phoneContacts } from '../db/schema';
-
-function generateId(): string {
-  return `pc_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-}
 
 export async function getPhoneForEmail(email: string): Promise<string | null> {
   const rows = await db
@@ -36,7 +33,7 @@ export async function upsertContact(contact: {
   await db
     .insert(phoneContacts)
     .values({
-      id: generateId(),
+      id: `pc_${randomUUID()}`,
       email,
       phone: contact.phone,
       name: contact.name ?? null,
