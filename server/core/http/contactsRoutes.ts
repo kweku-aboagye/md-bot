@@ -2,6 +2,10 @@ import type { Express } from 'express';
 import { z } from 'zod';
 import { deleteContact, listContacts, upsertContact } from '../sms/contacts';
 
+function maskPhone(phone: string): string {
+  return phone.slice(0, 3) + '•'.repeat(Math.max(0, phone.length - 5)) + phone.slice(-2);
+}
+
 const upsertSchema = z.object({
   email: z.string().email(),
   phone: z.string().regex(/^\+1\d{10}$/, 'Phone must be E.164 format: +1XXXXXXXXXX'),
@@ -14,7 +18,7 @@ export function registerContactsRoutes(app: Express): void {
       const contacts = await listContacts();
       const masked = contacts.map((c) => ({
         ...c,
-        phone: c.phone.slice(0, 3) + '•'.repeat(c.phone.length - 5) + c.phone.slice(-2),
+        phone: maskPhone(c.phone),
       }));
       res.json(masked);
     } catch (err: any) {

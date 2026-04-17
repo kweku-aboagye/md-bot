@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import { phoneContacts } from '../db/schema';
 
@@ -17,8 +17,12 @@ export async function getPhoneForEmail(email: string): Promise<string | null> {
 
 export async function getPhonesForEmails(emails: string[]): Promise<string[]> {
   if (emails.length === 0) return [];
-  const results = await Promise.all(emails.map(getPhoneForEmail));
-  return results.filter((p): p is string => p !== null);
+  const normalized = [...new Set(emails.map((e) => e.toLowerCase()))];
+  const rows = await db
+    .select({ phone: phoneContacts.phone })
+    .from(phoneContacts)
+    .where(inArray(phoneContacts.email, normalized));
+  return rows.map((r) => r.phone);
 }
 
 export async function upsertContact(contact: {

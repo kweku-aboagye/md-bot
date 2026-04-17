@@ -27,7 +27,7 @@ function maskPhone(phone: string): string {
 }
 
 async function sendViaTwilio(to: string, body: string): Promise<string | null> {
-  // Dynamic import so the app boots without twilio installed or configured
+  // Dynamic import defers Twilio loading until send time so the app can boot without Twilio configured
   const twilio = await import('twilio');
   const client = twilio.default(
     process.env.TWILIO_ACCOUNT_SID!,
@@ -60,6 +60,9 @@ export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<void> {
 
       try {
         messageSid = await sendViaTwilio(phone, args.body);
+        if (!messageSid) {
+          throw new Error('Twilio returned no message SID');
+        }
         log(`SMS sent to ${maskPhone(phone)} (${args.module})`, 'texter');
       } catch (err: any) {
         status = 'failed';
