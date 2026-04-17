@@ -3,6 +3,8 @@ import type { EmailTrigger } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { formatEmailDate } from '../../core/email/reminder-template';
 import { log } from '../../core/logging/log';
+import { getPhoneForEmail } from '../../core/sms/contacts';
+import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { buildAdminEmail, buildLeaderEmail } from './email';
 import { SECTION_NAMES } from './types';
 import type { EmailSent, SectionStatus, SectionValidation, WeekData } from './types';
@@ -104,6 +106,17 @@ export async function sendValidationEmails(
           sentAt: new Date().toISOString(),
         });
         log(`Admin email sent to ${adminEmail} for missing leader in ${v.sectionName}`, 'validator');
+
+        const adminPhone = getAdminPhone();
+        if (adminPhone) {
+          await sendTrackedSms({
+            to: adminPhone,
+            body: `[MD Bot] P&W: ${v.sectionName} is missing a leader for ${formattedDate}. Check your email.`,
+            module: 'pw',
+            trigger: options.trigger,
+            runId: options.runId,
+          });
+        }
       } catch (err: any) {
         log(`Failed to send admin email for ${v.sectionName}: ${err.message}`, 'validator');
       }
@@ -144,6 +157,17 @@ export async function sendValidationEmails(
           sentAt: new Date().toISOString(),
         });
         log(`Reminder sent to ${v.leaderEmail} for ${v.sectionName}`, 'validator');
+
+        const leaderPhone = await getPhoneForEmail(v.leaderEmail);
+        if (leaderPhone) {
+          await sendTrackedSms({
+            to: leaderPhone,
+            body: `[MD Bot] P&W reminder: your ${v.sectionName} setlist for ${formattedDate} needs updating. Check your email for details.`,
+            module: 'pw',
+            trigger: options.trigger,
+            runId: options.runId,
+          });
+        }
       } catch (err: any) {
         log(`Failed to send reminder to ${v.leaderEmail}: ${err.message}`, 'validator');
       }

@@ -23,19 +23,22 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// PIN protection for manual trigger routes.
+// PIN protection for manual trigger routes and contact mutations.
 // Set DASHBOARD_PIN=<your-pin> in .env to enable.
 // If not set, the routes are unprotected (local-only dev is fine without it).
-app.use('/api/test', (req, res, next) => {
+function pinMiddleware(req: Request, res: Response, next: NextFunction) {
   const pin = process.env.DASHBOARD_PIN;
-  if (!pin) return next(); // no PIN configured — allow through
-  if (req.method === 'OPTIONS') return next(); // CORS preflight
+  if (!pin) return next();
+  if (req.method === 'OPTIONS' || req.method === 'GET') return next();
   const provided = req.headers['x-dashboard-pin'];
   if (!provided || provided !== pin) {
     return res.status(401).json({ message: 'Invalid PIN' });
   }
   next();
-});
+}
+
+app.use('/api/test', pinMiddleware);
+app.use('/api/contacts', pinMiddleware);
 
 // Request logging middleware
 app.use((req, res, next) => {
