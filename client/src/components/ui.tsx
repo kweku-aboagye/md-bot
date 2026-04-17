@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { T } from '../theme';
 import { useAuth } from '../auth-context';
 
 // ── Card ──────────────────────────────────────────────────────────────────────
-export function Card({ children, style = {} }: { children: React.ReactNode; style?: React.CSSProperties }) {
+export function Card({
+  children,
+  className = '',
+  style = {},
+}: {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}) {
   return (
-    <div style={{
-      background: T.surface, borderRadius: 14, border: `1px solid ${T.border}`,
-      padding: "20px 22px", ...style,
-    }}>
+    <div className={`card${className ? ` ${className}` : ''}`} style={style}>
       {children}
     </div>
   );
@@ -18,18 +23,17 @@ export function Card({ children, style = {} }: { children: React.ReactNode; styl
 export function SectionHeader({ accent, icon, title, subtitle }: {
   accent: string; icon: string; title: string; subtitle?: string;
 }) {
+  const accentStyle = {
+    background: `${accent}22`,
+    border: `1px solid ${accent}30`,
+  } satisfies CSSProperties;
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: 9, background: accent + "22",
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17,
-        border: `1px solid ${accent}30`, flexShrink: 0,
-      }}>
-        {icon}
-      </div>
-      <div>
-        <div style={{ fontWeight: 700, fontSize: 14, color: T.text }}>{title}</div>
-        {subtitle && <div style={{ fontSize: 12, color: T.muted, marginTop: 1 }}>{subtitle}</div>}
+    <div className="section-header">
+      <div className="section-header__icon" style={accentStyle}>{icon}</div>
+      <div className="section-header__copy">
+        <div className="section-header__title">{title}</div>
+        {subtitle && <div className="section-header__subtitle">{subtitle}</div>}
       </div>
     </div>
   );
@@ -37,35 +41,31 @@ export function SectionHeader({ accent, icon, title, subtitle }: {
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
 export function Badge({ color, bg, label }: { color: string; bg: string; label: string }) {
+  const badgeStyle = {
+    '--badge-color': color,
+    '--badge-bg': bg,
+  } as CSSProperties;
+
   return (
-    <span style={{
-      background: bg, color, fontSize: 11, fontWeight: 700,
-      padding: "2px 9px", borderRadius: 20, whiteSpace: "nowrap",
-    }}>
-      {label}
-    </span>
+    <span className="badge" style={badgeStyle}>{label}</span>
   );
 }
 
 // ── StatusDot ─────────────────────────────────────────────────────────────────
 export function StatusDot({ ok }: { ok: boolean }) {
+  const dotStyle = {
+    '--status-dot-color': ok ? T.green : T.red,
+  } as CSSProperties;
+
   return (
-    <span style={{
-      display: "inline-block", width: 7, height: 7, borderRadius: "50%",
-      background: ok ? T.green : T.red, marginRight: 6, flexShrink: 0,
-    }} />
+    <span className="status-dot" style={dotStyle} />
   );
 }
 
 // ── SheetLink ─────────────────────────────────────────────────────────────────
 export function SheetLink({ href, label }: { href: string; label: string }) {
   return (
-    <a href={href} target="_blank" rel="noreferrer" style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      fontSize: 12, color: T.indigo, textDecoration: "none",
-      background: T.indigoDim, padding: "4px 10px", borderRadius: 6,
-      border: `1px solid ${T.indigo}30`, marginTop: 14,
-    }}>
+    <a href={href} target="_blank" rel="noreferrer" className="link-chip">
       <span>↗</span> {label}
     </a>
   );
@@ -138,25 +138,30 @@ export function RunButton({ route, label = "Trigger Now", onDone, disabled = fal
     done:    T.green,
     error:   T.red,
   };
+  const color = colors[state];
+  const buttonStyle = {
+    '--button-color': disabled ? `${T.border}` : `${color}30`,
+    '--button-bg': disabled ? T.surface2 : `${color}18`,
+    '--button-text': disabled ? T.muted : color,
+    opacity: disabled ? 0.65 : 1,
+  } as CSSProperties;
 
   return (
-    <div style={{ marginTop: 14 }}>
+    <div className="run-button-wrap">
       <button
+        type="button"
         onClick={handleRun}
         disabled={disabled || state === 'running'}
-        style={{
-          padding: "5px 14px", borderRadius: 7, border: `1px solid ${colors[state]}30`,
-          background: disabled ? T.surface2 : colors[state] + "18",
-          color: disabled ? T.muted : colors[state],
-          fontSize: 12, fontWeight: 600, cursor: disabled || state === 'running' ? 'default' : 'pointer',
-          transition: "all 0.15s",
-          opacity: disabled ? 0.65 : 1,
-        }}
+        className="run-button"
+        style={buttonStyle}
       >
         {state === 'running' ? 'Running…' : state === 'done' ? '✓ Done' : state === 'error' ? '✗ Error' : label}
       </button>
       {msg && (
-        <span style={{ fontSize: 11, color: state === 'error' ? T.red : T.green, marginLeft: 10 }}>
+        <span
+          className="run-button-message"
+          style={{ color: state === 'error' ? T.red : T.green }}
+        >
           {msg}
         </span>
       )}
@@ -167,23 +172,15 @@ export function RunButton({ route, label = "Trigger Now", onDone, disabled = fal
 // ── LoadingState / ErrorState ─────────────────────────────────────────────────
 export function LoadingState() {
   return (
-    <div style={{ fontSize: 12, color: T.muted, padding: "10px 0" }}>
-      Loading…
-    </div>
+    <div className="state-copy">Loading…</div>
   );
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div style={{
-      background: T.redDim, border: `1px solid ${T.red}30`, borderRadius: 9,
-      padding: "12px 14px", fontSize: 12,
-    }}>
-      <div style={{ color: T.red, fontWeight: 600, marginBottom: 6 }}>⚠ {message}</div>
-      <button onClick={onRetry} style={{
-        background: "none", border: `1px solid ${T.red}40`, color: T.red,
-        borderRadius: 6, padding: "3px 10px", fontSize: 11, cursor: "pointer",
-      }}>
+    <div className="error-panel">
+      <div className="error-panel__title">⚠ {message}</div>
+      <button type="button" onClick={onRetry} className="error-panel__action">
         Retry
       </button>
     </div>
