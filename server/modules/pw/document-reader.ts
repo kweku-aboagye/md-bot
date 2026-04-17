@@ -124,8 +124,10 @@ function extractParagraphs(content: any[]): ParagraphInfo[] {
         const uri = rlProps.uri || '';
         if (isYoutubeUrl(uri)) {
           linkUrl = uri;
-          // Do not append the rich link title/URI to fullText.
-          // The song title is what the leader typed; the YouTube chip is the URL only.
+          // Only use the rich link title as a fallback when no typed text exists yet.
+          // If the leader typed a title before the chip, don't append the video title
+          // (that would cause duplication like "Amazing Grace Amazing Grace - YouTube").
+          if (!fullText) fullText += rlProps.title || uri;
         } else {
           fullText += rlProps.title || uri;
         }
