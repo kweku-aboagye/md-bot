@@ -4,6 +4,8 @@ import { sendTrackedEmail } from '../../core/email/mailer';
 import { readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
+import { getPhonesForEmails } from '../../core/sms/contacts';
+import { sendTrackedSms } from '../../core/sms/texter';
 import { buildCelestialMissingHymnEmail } from './email';
 import type { CelestialCheckResult, CelestialHymnRecord } from './types';
 
@@ -111,7 +113,24 @@ export async function runCelestialCheck(
       result.emailSent = true;
       log(`Celestial missing hymn alert sent to ${recipients.join(', ')}`, 'celestial');
     } catch (err: any) {
-      log(`Failed to send Celestial alert: ${err.message}`, 'celestial');
+      log(`Failed to send Celestial alert email: ${err.message}`, 'celestial');
+    }
+
+    if (result.emailSent) {
+      try {
+        const phones = await getPhonesForEmails(recipients);
+        if (phones.length > 0) {
+          await sendTrackedSms({
+            to: phones,
+            body: `[MD Bot] Celestial reminder: hymn for Sun ${result.targetSunday} hasn't been logged yet. Check your email for details.`,
+            module: 'celestial',
+            trigger,
+            runId,
+          });
+        }
+      } catch (err: any) {
+        log(`Failed to send Celestial alert SMS: ${err.message}`, 'celestial');
+      }
     }
   } else {
     log(`Celestial hymn already selected for ${result.targetSunday} - no email needed`, 'celestial');

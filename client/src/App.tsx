@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { T, formatSunday } from './theme';
+import { Contacts } from './pages/Contacts';
 import { Overview } from './pages/Overview';
 import { Schedule } from './pages/Schedule';
 
@@ -15,11 +16,12 @@ function getTargetSunday(): string {
   return d.toISOString().split('T')[0];
 }
 
-type Tab = 'overview' | 'schedule';
+type Tab = 'overview' | 'schedule' | 'contacts';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'overview',   label: 'Overview' },
-  { id: 'schedule',   label: 'Schedule' },
+  { id: 'overview',  label: 'Overview' },
+  { id: 'schedule',  label: 'Schedule' },
+  { id: 'contacts',  label: 'Contacts' },
 ];
 
 export default function App() {
@@ -63,6 +65,7 @@ export default function App() {
 
         {tab === 'overview'   && <Overview targetSunday={targetSunday} />}
         {tab === 'schedule'   && <Schedule />}
+        {tab === 'contacts'   && <Contacts />}
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ import type { EmailTrigger } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { formatEmailDate } from '../../core/email/reminder-template';
 import { log } from '../../core/logging/log';
+import { getPhoneForEmail } from '../../core/sms/contacts';
+import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { buildAdminEmail, buildLeaderEmail } from './email';
 import { SECTION_NAMES } from './types';
 import type { EmailSent, SectionStatus, SectionValidation, WeekData } from './types';
@@ -71,6 +73,7 @@ export async function sendValidationEmails(
     if (v.status === 'complete') continue;
 
     if (v.status === 'missing_leader') {
+      let adminEmailSent = false;
       try {
         const email = buildAdminEmail(v.sectionName, formattedDate);
         const subject = `Action Needed: Missing Leader for ${v.sectionName} - ${formattedDate}`;
@@ -104,13 +107,32 @@ export async function sendValidationEmails(
           sentAt: new Date().toISOString(),
         });
         log(`Admin email sent to ${adminEmail} for missing leader in ${v.sectionName}`, 'validator');
+        adminEmailSent = true;
       } catch (err: any) {
         log(`Failed to send admin email for ${v.sectionName}: ${err.message}`, 'validator');
+      }
+
+      if (adminEmailSent) {
+        try {
+          const adminPhone = getAdminPhone();
+          if (adminPhone) {
+            await sendTrackedSms({
+              to: adminPhone,
+              body: `[MD Bot] P&W: ${v.sectionName} is missing a leader for ${formattedDate}. Check your email.`,
+              module: 'pw',
+              trigger: options.trigger,
+              runId: options.runId,
+            });
+          }
+        } catch (err: any) {
+          log(`Failed to send admin SMS for ${v.sectionName}: ${err.message}`, 'validator');
+        }
       }
       continue;
     }
 
     if (v.leaderEmail && (v.status === 'missing_songs' || v.status === 'missing_links')) {
+      let leaderEmailSent = false;
       try {
         const email = buildLeaderEmail(v, formattedDate);
         const subject = `Reminder: Please Update Your ${v.sectionName} Setlist - ${formattedDate}`;
@@ -144,8 +166,26 @@ export async function sendValidationEmails(
           sentAt: new Date().toISOString(),
         });
         log(`Reminder sent to ${v.leaderEmail} for ${v.sectionName}`, 'validator');
+        leaderEmailSent = true;
       } catch (err: any) {
-        log(`Failed to send reminder to ${v.leaderEmail}: ${err.message}`, 'validator');
+        log(`Failed to send reminder email to ${v.leaderEmail}: ${err.message}`, 'validator');
+      }
+
+      if (leaderEmailSent) {
+        try {
+          const leaderPhone = await getPhoneForEmail(v.leaderEmail);
+          if (leaderPhone) {
+            await sendTrackedSms({
+              to: leaderPhone,
+              body: `[MD Bot] P&W reminder: your ${v.sectionName} setlist for ${formattedDate} needs updating. Check your email for details.`,
+              module: 'pw',
+              trigger: options.trigger,
+              runId: options.runId,
+            });
+          }
+        } catch (err: any) {
+          log(`Failed to send reminder SMS to ${v.leaderEmail}: ${err.message}`, 'validator');
+        }
       }
     }
   }

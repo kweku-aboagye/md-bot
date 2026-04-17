@@ -27,6 +27,7 @@ import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
+import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { isSheetEntryFilledForDate } from './checker';
 import { buildHghSelectionReminderEmail } from './email';
 import type { HghSelectionStatus } from './types';
@@ -81,4 +82,15 @@ export async function checkHGHSelectionAndNotify(
   });
 
   log(`HGH selection reminder sent to ${adminEmail}`, 'hgh-selection');
+
+  const adminPhone = getAdminPhone();
+  if (adminPhone) {
+    await sendTrackedSms({
+      to: adminPhone,
+      body: `[MD Bot] HGH reminder: no song has been logged for Sun ${status.targetSunday} yet. Check your email for details.`,
+      module: 'hgh-selection',
+      trigger,
+      runId,
+    });
+  }
 }

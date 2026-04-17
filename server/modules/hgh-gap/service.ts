@@ -2,6 +2,7 @@ import { getAdminEmail } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { log } from '../../core/logging/log';
+import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { buildHghGapReportEmail } from './email';
 import { runHghGapFinder } from './finder';
 
@@ -34,5 +35,17 @@ export async function runHghReport(trigger: 'scheduled' | 'manual' = 'manual') {
   });
 
   log(`HGH gap report sent to ${adminEmail}`, 'hgh-gap');
+
+  const adminPhone = getAdminPhone();
+  if (adminPhone) {
+    await sendTrackedSms({
+      to: adminPhone,
+      body: `[MD Bot] HGH gap report is ready — ${result.unministeredSongs.length} songs remaining. Check your email for details.`,
+      module: 'hgh-gap',
+      trigger,
+      runId,
+    });
+  }
+
   return result;
 }

@@ -29,4 +29,35 @@ export async function ensureInternalTables() {
     create index if not exists email_history_sent_at_idx
     on email_history (sent_at desc)
   `);
+
+  await pool.query(`
+    create table if not exists phone_contacts (
+      id text primary key,
+      email text not null unique,
+      phone text not null,
+      name text,
+      created_at timestamptz not null,
+      updated_at timestamptz not null
+    )
+  `);
+
+  await pool.query(`
+    create table if not exists sms_history (
+      id text primary key,
+      run_id text not null,
+      module text not null,
+      trigger text not null,
+      recipient text not null,
+      body text not null,
+      message_sid text,
+      sent_at timestamptz not null,
+      status text not null,
+      error text
+    )
+  `);
+
+  await pool.query(`
+    create index if not exists sms_history_sent_at_idx
+    on sms_history (sent_at desc)
+  `);
 }

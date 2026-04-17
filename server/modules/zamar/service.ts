@@ -4,6 +4,8 @@ import { sendTrackedEmail } from '../../core/email/mailer';
 import { readCellLink, readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
+import { getPhonesForEmails } from '../../core/sms/contacts';
+import { sendTrackedSms } from '../../core/sms/texter';
 import { getServicesForWeek } from '../pw/document-reader';
 import { buildZamarPrepEmail } from './email';
 import type { ZamarPrepResult, ZamarSong } from './types';
@@ -198,7 +200,24 @@ export async function runZamarPrep(
     result.emailSent = true;
     log(`Zamar prep list sent to ${recipients.join(', ')}`, 'zamar');
   } catch (err: any) {
-    log(`Failed to send Zamar prep list: ${err.message}`, 'zamar');
+    log(`Failed to send Zamar prep list email: ${err.message}`, 'zamar');
+  }
+
+  if (result.emailSent) {
+    try {
+      const phones = await getPhonesForEmails(recipients);
+      if (phones.length > 0) {
+        await sendTrackedSms({
+          to: phones,
+          body: `[MD Bot] Zamar prep list for Sun ${result.targetSunday} is ready (${result.songs.length} songs). Check your email for details.`,
+          module: 'zamar',
+          trigger,
+          runId,
+        });
+      }
+    } catch (err: any) {
+      log(`Failed to send Zamar prep list SMS: ${err.message}`, 'zamar');
+    }
   }
 
   return result;
