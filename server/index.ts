@@ -17,19 +17,19 @@ app.use(express.urlencoded({ extended: false }));
 if (process.env.NODE_ENV === 'development') {
   app.use((_req, res, next) => {
     res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, x-dashboard-pin');
     next();
   });
 }
 
-// PIN protection for manual trigger routes and contact mutations.
+// PIN protection middleware.
 // Set DASHBOARD_PIN=<your-pin> in .env to enable.
 // If not set, the routes are unprotected (local-only dev is fine without it).
-function pinMiddleware(req: Request, res: Response, next: NextFunction) {
+function checkPin(req: Request, res: Response, next: NextFunction) {
   const pin = process.env.DASHBOARD_PIN;
   if (!pin) return next();
-  if (req.method === 'OPTIONS' || req.method === 'GET') return next();
+  if (req.method === 'OPTIONS') return next();
   const provided = req.headers['x-dashboard-pin'];
   if (!provided || provided !== pin) {
     return res.status(401).json({ message: 'Invalid PIN' });
@@ -37,8 +37,15 @@ function pinMiddleware(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-app.use('/api/test', pinMiddleware);
-app.use('/api/contacts', pinMiddleware);
+// Manual trigger routes — PIN required for all methods except GET/OPTIONS
+function pinMutationsOnly(req: Request, res: Response, next: NextFunction) {
+  if (req.method === 'GET' || req.method === 'OPTIONS') return next();
+  checkPin(req, res, next);
+}
+
+app.use('/api/test', pinMutationsOnly);
+// Contacts — PIN required for all methods (GET exposes names/emails)
+app.use('/api/contacts', checkPin);
 
 // Request logging middleware
 app.use((req, res, next) => {

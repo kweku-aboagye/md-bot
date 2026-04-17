@@ -19,12 +19,23 @@ export function Contacts() {
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pin, setPin] = useState<string | undefined>(undefined);
 
-  const loadContacts = useCallback(async () => {
+  const loadContacts = useCallback(async (pinOverride?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/contacts');
+      const res = await fetch('/api/contacts', {
+        headers: pinOverride ? { 'x-dashboard-pin': pinOverride } : {},
+      });
+      if (res.status === 401) {
+        setLoading(false);
+        showPinModal((p) => {
+          setPin(p);
+          loadContacts(p);
+        }, pinOverride ? 'Incorrect PIN' : null);
+        return;
+      }
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       setContacts(await res.json());
     } catch (e: unknown) {
@@ -32,11 +43,12 @@ export function Contacts() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showPinModal]);
 
-  useEffect(() => { loadContacts(); }, [loadContacts]);
+  useEffect(() => { loadContacts(pin); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function saveWithPin(pin?: string) {
+  async function saveWithPin(pinOverride?: string) {
+    const activePin = pinOverride ?? pin;
     setSaving(true);
     setFormError(null);
     try {
@@ -44,18 +56,18 @@ export function Contacts() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(pin ? { 'x-dashboard-pin': pin } : {}),
+          ...(activePin ? { 'x-dashboard-pin': activePin } : {}),
         },
         body: JSON.stringify(form),
       });
       const data = await res.json();
       if (res.status === 401) {
-        showPinModal(saveWithPin, 'Incorrect PIN');
+        showPinModal((p) => { setPin(p); saveWithPin(p); }, 'Incorrect PIN');
         return;
       }
       if (!res.ok) { setFormError(data.message ?? 'Failed to save'); return; }
       setForm({ name: '', email: '', phone: '' });
-      await loadContacts();
+      await loadContacts(activePin);
     } catch (e: unknown) {
       setFormError(e instanceof Error ? e.message : 'Failed to save');
     } finally {
@@ -64,26 +76,32 @@ export function Contacts() {
   }
 
   function handleSave() {
-    showPinModal(saveWithPin);
+    showPinModal((p) => { setPin(p); saveWithPin(p); });
   }
 
   function handleDelete(email: string) {
-    showPinModal(async (pin) => {
+    const doDelete = async (pinOverride?: string) => {
+      const activePin = pinOverride ?? pin;
       try {
         const res = await fetch(`/api/contacts/${encodeURIComponent(email)}`, {
           method: 'DELETE',
-          headers: pin ? { 'x-dashboard-pin': pin } : {},
+          headers: activePin ? { 'x-dashboard-pin': activePin } : {},
         });
+        if (res.status === 401) {
+          showPinModal((p) => { setPin(p); doDelete(p); }, 'Incorrect PIN');
+          return;
+        }
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           alert(data.message ?? 'Failed to delete');
           return;
         }
-        await loadContacts();
+        await loadContacts(activePin);
       } catch {
         alert('Failed to delete contact');
       }
-    });
+    };
+    showPinModal((p) => { setPin(p); doDelete(p); });
   }
 
   const canSave = !saving && !!form.email && !!form.phone;
@@ -143,7 +161,7 @@ export function Contacts() {
         {error && (
           <div className="error-panel">
             <div className="error-panel__title">⚠ {error}</div>
-            <button type="button" onClick={loadContacts} className="error-panel__action">Retry</button>
+            <button type="button" onClick={() => loadContacts(pin)} className="error-panel__action">Retry</button>
           </div>
         )}
         {!loading && !error && contacts.length === 0 && (
