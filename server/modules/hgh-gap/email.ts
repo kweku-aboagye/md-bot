@@ -1,6 +1,15 @@
 import { buildReportEmail } from '../../core/email/report-template';
 import type { HghGapResult } from './types';
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function buildHghGapReportEmail(result: HghGapResult) {
   const { unministeredSongs, suggestedNext, totalPlaylistSongs, ministeredTitles } = result;
   const ministeredCount = ministeredTitles.length;
@@ -9,12 +18,12 @@ export function buildHghGapReportEmail(result: HghGapResult) {
     .slice(0, 20)
     .map(
       (song, index) =>
-        `<tr style="border-bottom: 1px solid #f0f0f0;">
-          <td style="padding: 8px 4px; color: #888; font-size: 13px; width: 28px;">${index + 1}</td>
-          <td style="padding: 8px 4px;">
-            <a href="${song.url}" style="color: #2563eb; text-decoration: none; font-size: 14px;">${song.title}</a>
-          </td>
-        </tr>`
+        `<div style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+          <div style="font-size: 12px; color: #9ca3af; margin-bottom: 6px;">${index + 1}</div>
+          <a href="${escapeHtml(song.url)}" style="color: #2563eb; text-decoration: none; font-size: 15px; line-height: 1.55; word-break: break-word;">
+            ${escapeHtml(song.title)}
+          </a>
+        </div>`
     )
     .join('');
 
@@ -25,10 +34,10 @@ export function buildHghGapReportEmail(result: HghGapResult) {
 
   const bodyHtml = remainingCount > 0
     ? `
-        <h3 style="margin: 24px 0 12px; font-size: 15px;">All unministered songs</h3>
-        <table style="width: 100%; border-collapse: collapse;">
+        <h3 style="margin: 24px 0 12px; font-size: 15px; line-height: 1.4;">All unministered songs</h3>
+        <div>
           ${songListRows}
-        </table>
+        </div>
         ${truncationNote}
       `
     : '<p style="margin: 0; color: #666; line-height: 1.6;">All playlist songs have been ministered. Time to refresh the playlist.</p>';

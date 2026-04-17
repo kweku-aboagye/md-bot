@@ -31,6 +31,7 @@ Compares the HGH YouTube playlist against linked recordings in the HGH sheet to 
 - dashboard status, scheduled reports, and manual trigger emails all use the same gap finder result
 - the manual trigger is now a preview of the exact report cron will send on Monday
 - the actual email send path is the shared mailer in `server/core/email/mailer.ts`
+- the report HTML is built through the shared responsive report template in `server/core/email/report-template.ts`
 - if production is configured for `Resend`, both the Monday cron job and the manual dashboard trigger send through Resend
 
 ## Manual Testing

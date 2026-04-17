@@ -31,6 +31,7 @@ Checks whether His Glory Heralds has logged a song for the shared target Sunday 
 ## Email Delivery
 
 - selection reminders use the shared mailer in `server/core/email/mailer.ts`
+- selection reminder HTML is built through the shared responsive reminder template in `server/core/email/reminder-template.ts`
 - manual and scheduled HGH selection runs use the same provider configuration
 - on Railway, that should normally be `Resend`
 

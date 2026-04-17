@@ -43,6 +43,7 @@ Reads the P&W Google Doc for the target Sunday week, validates each required sec
 ## Email Delivery
 
 - reminder emails use the shared mailer in `server/core/email/mailer.ts`
+- reminder HTML is built through the shared responsive reminder template in `server/core/email/reminder-template.ts`
 - manual and scheduled P&W runs use the same provider configuration
 - on Railway, that should normally be `Resend`
 

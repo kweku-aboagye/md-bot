@@ -55,6 +55,8 @@ const STAT_TONES = {
   danger: '#ef4444',
 } as const;
 
+const EMAIL_FONT_STACK = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -74,54 +76,78 @@ export function buildReportEmail(options: ReportEmailOptions): ReportEmailConten
   const statsHtml =
     options.stats && options.stats.length > 0
       ? `
-      <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
         ${options.stats
           .map((stat) => {
             const tone = STAT_TONES[stat.tone ?? 'default'];
             return `
-            <div style="flex: 1; background: #f8f8f8; border-radius: 8px; padding: 14px; text-align: center;">
-              <div style="font-size: 28px; font-weight: 600; color: ${tone};">${escapeHtml(String(stat.value))}</div>
-              <div style="color: #666; font-size: 13px;">${escapeHtml(stat.label)}</div>
-            </div>
+            <tr>
+              <td style="padding: 0 0 10px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px;">
+                  <tr>
+                    <td style="padding: 14px 16px; text-align: center;">
+                      <div style="font-size: 28px; font-weight: 600; line-height: 1.2; color: ${tone}; word-break: break-word;">${escapeHtml(String(stat.value))}</div>
+                      <div style="margin-top: 4px; color: #666666; font-size: 13px; line-height: 1.5; word-break: break-word;">${escapeHtml(stat.label)}</div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
           `;
           })
           .join('')}
-      </div>`
+      </table>`
       : '';
 
   const calloutHtml = options.callout
     ? (() => {
         const tone = CALL_OUT_TONES[options.callout?.tone ?? 'info'];
         const eyebrowHtml = options.callout?.eyebrow
-          ? `<div style="font-size: 11px; font-weight: 700; color: #666; margin-bottom: 4px; letter-spacing: 0.07em;">${escapeHtml(options.callout.eyebrow)}</div>`
+          ? `<div style="font-size: 11px; font-weight: 700; color: #666666; margin-bottom: 4px; letter-spacing: 0.07em; word-break: break-word;">${escapeHtml(options.callout.eyebrow)}</div>`
           : '';
         const descriptionHtml = options.callout?.description
-          ? `<p style="margin: 4px 0 0; color: #666; font-size: 14px;">${escapeHtml(options.callout.description)}</p>`
+          ? `<p style="margin: 6px 0 0; color: #666666; font-size: 14px; line-height: 1.5; word-break: break-word;">${escapeHtml(options.callout.description)}</p>`
           : '';
         const actionHtml = options.callout?.action
-          ? `<p style="margin: 10px 0 0;"><a href="${escapeHtml(options.callout.action.url)}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${escapeHtml(options.callout.action.label)} &rarr;</a></p>`
+          ? `<p style="margin: 10px 0 0;"><a href="${escapeHtml(options.callout.action.url)}" style="color: #2563eb; text-decoration: none; font-weight: 600; word-break: break-word;">${escapeHtml(options.callout.action.label)} &rarr;</a></p>`
           : '';
 
         return `
-      <div style="background: ${tone.background}; border-left: 3px solid ${tone.accent}; padding: 14px 18px; margin: 20px 0 24px; border-radius: 0 6px 6px 0;">
-        ${eyebrowHtml}
-        <p style="margin: 0; font-weight: 600; font-size: 15px;">${escapeHtml(options.callout.title)}</p>
-        ${descriptionHtml}
-        ${actionHtml}
-      </div>`;
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin: 20px 0 24px; background: ${tone.background}; border-left: 3px solid ${tone.accent}; border-radius: 0 10px 10px 0;">
+        <tr>
+          <td style="padding: 16px;">
+            ${eyebrowHtml}
+            <p style="margin: 0; font-weight: 600; font-size: 15px; line-height: 1.5; word-break: break-word;">${escapeHtml(options.callout.title)}</p>
+            ${descriptionHtml}
+            ${actionHtml}
+          </td>
+        </tr>
+      </table>`;
       })()
     : '';
 
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 620px; margin: 0 auto; color: #1a1a1a;">
-      <h2 style="margin: 0 0 4px;">${escapeHtml(options.title)}</h2>
-      ${options.metaLine ? `<p style="color: #666; font-size: 13px; margin: 0 0 24px;">${escapeHtml(options.metaLine)}</p>` : ''}
+    <div style="margin: 0; padding: 0; background: #f5f7fb;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; background: #f5f7fb;">
+        <tr>
+          <td align="center" style="padding: 24px 12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 620px; border-collapse: collapse; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px;">
+              <tr>
+                <td style="padding: 24px 20px; font-family: ${EMAIL_FONT_STACK}; color: #1a1a1a;">
+                  <h2 style="margin: 0 0 4px; font-size: 24px; line-height: 1.25; word-break: break-word;">${escapeHtml(options.title)}</h2>
+                  ${options.metaLine ? `<p style="margin: 0 0 20px; color: #666666; font-size: 13px; line-height: 1.5; word-break: break-word;">${escapeHtml(options.metaLine)}</p>` : ''}
 
-      ${statsHtml}
-      ${calloutHtml}
-      ${options.bodyHtml ?? ''}
+                  ${statsHtml}
+                  ${calloutHtml}
+                  ${options.bodyHtml ?? ''}
 
-      <p style="color: #666; font-size: 13px; margin-top: 32px; border-top: 1px solid #eee; padding-top: 16px;">&mdash; ${escapeHtml(footerLabel)}</p>
+                  <p style="color: #666666; font-size: 13px; line-height: 1.5; margin: 32px 0 0; border-top: 1px solid #eeeeee; padding-top: 16px;">&mdash; ${escapeHtml(footerLabel)}</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </div>
   `;
 
