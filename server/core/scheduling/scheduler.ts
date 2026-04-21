@@ -59,7 +59,7 @@ export function getNextScheduledRun(): ScheduleInfo {
     adminEmail: getAdminEmail(),
     nextRunAt: nextRunUtc.toISOString(),
     targetSunday: formatISODate(targetSundayDate),
-    upcomingHalfNight: getUpcomingHalfNight(nextRunUtc, targetSundayDate),
+    upcomingHalfNight: getUpcomingHalfNight(now, targetSundayDate),
     emailRouting: getEmailRoutingConfig(),
   };
 }
