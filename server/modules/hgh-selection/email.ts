@@ -2,17 +2,18 @@ import { HGH_SHEET_ID } from '../../core/config/resources';
 import {
   buildReminderEmail,
   formatEmailDate,
-  formatEmailTime,
 } from '../../core/email/reminder-template';
 
-export function buildHghSelectionReminderEmail(targetSunday: string, ranAt: string) {
+export function buildHghSelectionReminderEmail(targetSunday: string) {
+  const formattedDate = formatEmailDate(targetSunday);
+
   return buildReminderEmail({
     title: 'HGH: Song Not Yet Logged',
-    metaLine: `Checked ${formatEmailTime(ranAt)}`,
+    metaLine: `For ${formattedDate}`,
     tone: 'warning',
-    highlightTitle: `No HGH song has been logged for ${formatEmailDate(targetSunday)}`,
+    highlightTitle: `No HGH song has been logged for ${formattedDate}`,
     paragraphs: [
-      'The HGH Song Collection sheet does not have an entry for the upcoming Sunday.',
+      'The HGH Song Collection sheet does not show an entry for the upcoming service.',
       'Please update the sheet with the planned song selection.',
     ],
     action: {

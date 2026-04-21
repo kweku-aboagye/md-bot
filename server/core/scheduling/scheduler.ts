@@ -7,7 +7,7 @@ import { runHghReport } from '../../modules/hgh-gap/service';
 import { checkHGHSelectionAndNotify } from '../../modules/hgh-selection/service';
 import { runValidation } from '../../modules/pw/service';
 import { runZamarPrep } from '../../modules/zamar/service';
-import { formatISODate, getTargetSunday } from './target-sunday';
+import { formatISODate, getTargetSunday, getUpcomingHalfNight } from './target-sunday';
 
 const CT_OFFSET_HOURS = 5;
 const CT_9AM_UTC = 9 + CT_OFFSET_HOURS;
@@ -53,12 +53,13 @@ export function getNextScheduledRun(): ScheduleInfo {
   }
 
   const nextRunUtc = ctComponentsToUtc(ct.year, ct.month, ct.day + daysAhead, nextHourCT);
-  const targetSunday = getTargetSunday(nextRunUtc);
+  const targetSundayDate = getTargetSunday(nextRunUtc);
 
   return {
     adminEmail: getAdminEmail(),
     nextRunAt: nextRunUtc.toISOString(),
-    targetSunday: formatISODate(targetSunday),
+    targetSunday: formatISODate(targetSundayDate),
+    upcomingHalfNight: getUpcomingHalfNight(nextRunUtc, targetSundayDate),
     emailRouting: getEmailRoutingConfig(),
   };
 }

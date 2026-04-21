@@ -63,7 +63,7 @@ export async function checkHGHSelectionAndNotify(
 
   log(`No HGH song logged for ${status.targetSunday} - sending reminder`, 'hgh-selection');
 
-  const email = buildHghSelectionReminderEmail(status.targetSunday, new Date().toISOString());
+  const email = buildHghSelectionReminderEmail(status.targetSunday);
   await sendTrackedEmail({
     to: adminEmail,
     subject: `HGH: No song logged for ${status.targetSunday}`,

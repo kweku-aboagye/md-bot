@@ -14,7 +14,7 @@ function buildPwAction() {
 export function buildAdminEmail(sectionName: string, formattedDate: string) {
   return buildReminderEmail({
     title: 'Missing Leader Assignment',
-    metaLine: `Target Sunday ${formattedDate}`,
+    metaLine: `For ${formattedDate}`,
     tone: 'critical',
     highlightTitle: `No leader is assigned for ${sectionName}`,
     paragraphs: [
@@ -29,7 +29,7 @@ export function buildLeaderEmail(validation: SectionValidation, formattedDate: s
   if (validation.status === 'missing_songs') {
     return buildReminderEmail({
       title: 'Setlist Reminder',
-      metaLine: `Target Sunday ${formattedDate}`,
+      metaLine: `For ${formattedDate}`,
       tone: 'warning',
       highlightTitle: `${validation.sectionName} still needs song selections`,
       paragraphs: [
@@ -43,7 +43,7 @@ export function buildLeaderEmail(validation: SectionValidation, formattedDate: s
   if (validation.status === 'missing_links') {
     return buildReminderEmail({
       title: 'Setlist Reminder',
-      metaLine: `Target Sunday ${formattedDate}`,
+      metaLine: `For ${formattedDate}`,
       tone: 'warning',
       highlightTitle: `${validation.sectionName} is missing YouTube links`,
       paragraphs: [
@@ -57,7 +57,7 @@ export function buildLeaderEmail(validation: SectionValidation, formattedDate: s
 
   return buildReminderEmail({
     title: 'Setlist Reminder',
-    metaLine: `Target Sunday ${formattedDate}`,
+    metaLine: `For ${formattedDate}`,
     tone: 'info',
     highlightTitle: `${validation.sectionName} is ready`,
     paragraphs: [`No follow-up is needed for ${validation.sectionName}.`],
