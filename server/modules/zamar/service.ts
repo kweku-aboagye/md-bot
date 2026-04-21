@@ -1,6 +1,7 @@
 import { CELESTIAL_COL_DATE, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, DOCUMENT_ID, getZamarBandEmails, HGH_COL_DATE, HGH_COL_TITLE, HGH_DATA_START_ROW, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
+import { formatEmailDate } from '../../core/email/reminder-template';
 import { readCellLink, readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
@@ -183,7 +184,7 @@ export async function runZamarPrep(
   try {
     await sendTrackedEmail({
       to: recipients,
-      subject: `Zamar Band Prep List — Sunday ${result.targetSunday} (${result.songs.length} songs)`,
+      subject: `Zamar Band Prep List — ${formatEmailDate(result.targetSunday)} (${result.songs.length} songs)`,
       html: buildZamarPrepEmail(result),
       history: {
         runId,

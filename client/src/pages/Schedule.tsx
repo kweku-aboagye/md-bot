@@ -25,12 +25,14 @@ const ROWS = [
   },
   { days: "Monday", time: "9 AM CT", modules: ["His Glory Heralds Gap Report"], color: T.yellow },
   { days: "Wednesday", time: "12 PM CT", modules: ["Zamar Band Prep List"], color: T.teal },
+  { days: "1st Fri / month", time: "9 PM CT", modules: ["Half Night (P&W)"], color: T.amber },
 ];
 
 interface ScheduleInfo {
   adminEmail: string;
   nextRunAt: string;
   targetSunday: string;
+  upcomingHalfNight: string | null;
   emailRouting: {
     pwIncomplete: string;
     pwMissingLeader: string;

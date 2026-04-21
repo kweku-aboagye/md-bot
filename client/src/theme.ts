@@ -30,7 +30,7 @@ export const LINKS = {
   hghPlaylist: "https://www.youtube.com/playlist?list=PLoFyCfy6CTrdrzLP1bQJrtBcD6BINBZBZ",
 };
 
-export function formatSunday(iso: string) {
+export function formatServiceDate(iso: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString("en-US", {
     weekday: "long", month: "long", day: "numeric", year: "numeric",
   });

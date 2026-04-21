@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type CSSProperties } from 'react';
-import { T, LINKS, formatSunday } from '../theme';
+import { T, LINKS, formatServiceDate } from '../theme';
 import {
   Card, SectionHeader, Badge, StatusDot,
   SheetLink, RunButton, LoadingState, ErrorState,
@@ -105,7 +105,7 @@ function PWPanel({ targetSunday }: { targetSunday: string }) {
       {error && <ErrorState message={error} onRetry={reload} />}
       {data && sections.length === 0 && (
         <div style={{ fontSize: 13, color: T.muted, fontStyle: "italic" }}>
-          No service data found for {formatSunday(targetSunday)}
+          No service data found for {formatServiceDate(targetSunday)}
         </div>
       )}
       {data && sections.length > 0 && (
@@ -152,8 +152,8 @@ function CelestialPanel({ targetSunday }: { targetSunday: string }) {
     ? 'Loading…'
     : data
       ? data.hymnSelected
-        ? `Hymn selected for ${formatSunday(targetSunday)}`
-        : `No hymn selected for ${formatSunday(targetSunday)}`
+        ? `Hymn selected for ${formatServiceDate(targetSunday)}`
+        : `No hymn selected for ${formatServiceDate(targetSunday)}`
       : 'Loading…';
 
   return (
@@ -172,7 +172,7 @@ function CelestialPanel({ targetSunday }: { targetSunday: string }) {
             </div>
           ) : (
             <div className="status-card__title" style={{ color: T.amber }}>
-              <StatusDot ok={false} />No hymn selected for {formatSunday(targetSunday)}
+              <StatusDot ok={false} />No hymn selected for {formatServiceDate(targetSunday)}
             </div>
           )}
         </div>
@@ -192,8 +192,8 @@ function HGHSelectionPanel({ targetSunday }: { targetSunday: string }) {
     ? 'Loading…'
     : data
       ? data.songSelected
-        ? `Song selected for ${formatSunday(targetSunday)}`
-        : `No song selected for ${formatSunday(targetSunday)}`
+        ? `Song selected for ${formatServiceDate(targetSunday)}`
+        : `No song selected for ${formatServiceDate(targetSunday)}`
       : 'Loading…';
 
   return (
@@ -212,7 +212,7 @@ function HGHSelectionPanel({ targetSunday }: { targetSunday: string }) {
             </div>
           ) : (
             <div className="status-card__title" style={{ color: T.amber }}>
-              <StatusDot ok={false} />No song selected for {formatSunday(targetSunday)}
+              <StatusDot ok={false} />No song selected for {formatServiceDate(targetSunday)}
             </div>
           )}
         </div>

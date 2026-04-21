@@ -76,7 +76,7 @@ export function buildZamarPrepEmail(result: ZamarPrepResult): string {
 
   const noSongsWarning = totalSongs === 0
     ? `<div style="background: #fff3f3; border-left: 3px solid #ef4444; padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px;">
-        <p style="margin: 0; font-weight: 600;">No songs have been submitted yet for this Sunday.</p>
+        <p style="margin: 0; font-weight: 600;">No songs have been submitted yet for this service.</p>
         <p style="margin: 4px 0 0; color: #666; font-size: 14px;">This prep list will be empty until the other teams update their sheets.</p>
       </div>`
     : '';
