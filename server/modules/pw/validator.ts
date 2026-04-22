@@ -6,27 +6,12 @@ import { log } from '../../core/logging/log';
 import { getPhoneForEmail } from '../../core/sms/contacts';
 import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { buildAdminEmail, buildLeaderEmail } from './email';
-import { SECTION_NAMES } from './types';
 import type { EmailSent, SectionStatus, SectionValidation, WeekData } from './types';
 
 export function validateSections(weekData: WeekData): SectionValidation[] {
   const results: SectionValidation[] = [];
 
-  for (const requiredSection of SECTION_NAMES) {
-    const section = weekData.sections.find((s) => s.name === requiredSection);
-
-    if (!section) {
-      results.push({
-        sectionName: requiredSection,
-        leaderEmail: null,
-        status: 'missing_leader',
-        songCount: 0,
-        songsWithLinks: 0,
-        songsWithoutLinks: [],
-      });
-      continue;
-    }
-
+  for (const section of weekData.sections) {
     const songsWithoutLinks = section.songs
       .filter((s) => !s.youtubeUrl)
       .map((s) => s.title);
