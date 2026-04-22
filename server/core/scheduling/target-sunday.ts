@@ -12,30 +12,33 @@ export function formatISODate(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
+// Fixed UTC−5 offset used throughout the scheduling module.
+// Central Time is UTC−6 during CST (Nov–Mar) and UTC−5 during CDT (Mar–Nov).
+// This codebase runs on a fixed UTC−5 schedule and does not adjust for DST.
+export const CT_OFFSET_HOURS = 5;
+const CT_OFFSET_MS = CT_OFFSET_HOURS * 60 * 60 * 1000;
+
 // Returns the ISO date of the First Friday of the month within the prep window
 // (on or after fromDate, and on or before targetSunday), or null.
 //
 // Checks both fromDate's month and targetSunday's month because the window often
 // crosses a month boundary (e.g. fromDate=Apr 21, targetSunday=May 3 → May 1).
-// Comparisons use the CT calendar date (UTC−5) so the Friday banner stays visible
-// until midnight CT — without this, UTC rollover hides it during the 7–11 PM CT
-// window before the 9 PM event even starts.
-const CT_OFFSET_MS = 5 * 60 * 60 * 1000;
-
+// Both bounds are converted to CT calendar dates before comparison so the
+// Half Night banner stays visible until midnight CT rather than midnight UTC.
 export function getUpcomingHalfNight(
   fromDate: Date = new Date(),
   targetSunday: Date = getTargetSunday()
 ): string | null {
-  // Shift fromDate to CT so date comparisons match the CT event calendar.
-  const fromCT = new Date(fromDate.getTime() - CT_OFFSET_MS);
-  const fromISO = formatISODate(fromCT);
-  const targetISO = formatISODate(targetSunday);
+  const fromISO = formatISODate(new Date(fromDate.getTime() - CT_OFFSET_MS));
+  const targetISO = formatISODate(new Date(targetSunday.getTime() - CT_OFFSET_MS));
 
+  const fromCT = new Date(fromDate.getTime() - CT_OFFSET_MS);
   const monthsToCheck: Array<{ year: number; month: number }> = [
     { year: fromCT.getUTCFullYear(), month: fromCT.getUTCMonth() },
   ];
-  const tYear = targetSunday.getUTCFullYear();
-  const tMonth = targetSunday.getUTCMonth();
+  const targetCT = new Date(targetSunday.getTime() - CT_OFFSET_MS);
+  const tYear = targetCT.getUTCFullYear();
+  const tMonth = targetCT.getUTCMonth();
   if (tYear !== monthsToCheck[0].year || tMonth !== monthsToCheck[0].month) {
     monthsToCheck.push({ year: tYear, month: tMonth });
   }
