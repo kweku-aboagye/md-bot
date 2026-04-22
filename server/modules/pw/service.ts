@@ -51,7 +51,7 @@ export async function runValidation(
 
       let serviceEmails: ValidationResult['emailsSent'] = [];
 
-      if (complete === total && trigger === 'scheduled') {
+      if (complete === total && total > 0 && trigger === 'scheduled') {
         log(`All ${total} sections complete for ${weekData.serviceDate} - skipping emails`, 'pw');
       } else {
         serviceEmails = await sendValidationEmails(sections, weekData, {
