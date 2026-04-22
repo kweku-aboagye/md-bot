@@ -13,7 +13,7 @@ export function formatISODate(date: Date): string {
 }
 
 // Returns the ISO date of the First Friday of the month within the prep window
-// (strictly on or after fromDate, on or before targetSunday), or null.
+// (on or after fromDate, and on or before targetSunday), or null.
 //
 // Checks both fromDate's month and targetSunday's month because the window often
 // crosses a month boundary (e.g. fromDate=Apr 21, targetSunday=May 3 → May 1).
