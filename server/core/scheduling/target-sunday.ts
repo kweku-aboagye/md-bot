@@ -17,17 +17,22 @@ export function formatISODate(date: Date): string {
 //
 // Checks both fromDate's month and targetSunday's month because the window often
 // crosses a month boundary (e.g. fromDate=Apr 21, targetSunday=May 3 → May 1).
-// Uses date-only (ISO string) comparison so the Friday itself is included even
-// when fromDate has a later time on the same calendar day (Half Night is at 9 PM).
+// Comparisons use the CT calendar date (UTC−5) so the Friday banner stays visible
+// until midnight CT — without this, UTC rollover hides it during the 7–11 PM CT
+// window before the 9 PM event even starts.
+const CT_OFFSET_MS = 5 * 60 * 60 * 1000;
+
 export function getUpcomingHalfNight(
   fromDate: Date = new Date(),
   targetSunday: Date = getTargetSunday()
 ): string | null {
-  const fromISO = formatISODate(fromDate);
+  // Shift fromDate to CT so date comparisons match the CT event calendar.
+  const fromCT = new Date(fromDate.getTime() - CT_OFFSET_MS);
+  const fromISO = formatISODate(fromCT);
   const targetISO = formatISODate(targetSunday);
 
   const monthsToCheck: Array<{ year: number; month: number }> = [
-    { year: fromDate.getUTCFullYear(), month: fromDate.getUTCMonth() },
+    { year: fromCT.getUTCFullYear(), month: fromCT.getUTCMonth() },
   ];
   const tYear = targetSunday.getUTCFullYear();
   const tMonth = targetSunday.getUTCMonth();
