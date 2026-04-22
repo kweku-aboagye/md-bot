@@ -4,27 +4,14 @@ import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
 import { getServicesForWeek } from './document-reader';
 import { validateSections, sendValidationEmails } from './validator';
-import { SECTION_NAMES } from './types';
-import type { SectionData, ValidationResult, WeekData } from './types';
-
-function withPaddedSections(weekData: WeekData): WeekData {
-  const sections: SectionData[] = SECTION_NAMES.map((name) => {
-    const existing = weekData.sections.find((section) => section.name === name);
-    return existing || { name, leaderEmail: null, songs: [] };
-  });
-
-  return {
-    ...weekData,
-    sections,
-  };
-}
+import type { ValidationResult } from './types';
 
 export async function getPwStatus(targetSunday = getTargetSunday()) {
   const weekServices = await getServicesForWeek(DOCUMENT_ID, targetSunday);
 
   return {
     targetSunday: formatISODate(targetSunday),
-    services: weekServices.map(withPaddedSections),
+    services: weekServices,
   };
 }
 
@@ -64,7 +51,7 @@ export async function runValidation(
 
       let serviceEmails: ValidationResult['emailsSent'] = [];
 
-      if (complete === total && trigger === 'scheduled') {
+      if (complete === total && total > 0 && trigger === 'scheduled') {
         log(`All ${total} sections complete for ${weekData.serviceDate} - skipping emails`, 'pw');
       } else {
         serviceEmails = await sendValidationEmails(sections, weekData, {

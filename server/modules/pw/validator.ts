@@ -6,27 +6,27 @@ import { log } from '../../core/logging/log';
 import { getPhoneForEmail } from '../../core/sms/contacts';
 import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { buildAdminEmail, buildLeaderEmail } from './email';
-import { SECTION_NAMES } from './types';
-import type { EmailSent, SectionStatus, SectionValidation, WeekData } from './types';
+import type { EmailSent, SectionData, SectionStatus, SectionValidation, WeekData } from './types';
 
 export function validateSections(weekData: WeekData): SectionValidation[] {
+  // Merge duplicate section headings (same name appearing more than once in the doc)
+  // into a single entry so we don't emit duplicate validations or duplicate emails.
+  const merged = new Map<string, SectionData>();
+  for (const section of weekData.sections) {
+    const existing = merged.get(section.name);
+    if (existing) {
+      existing.songs.push(...section.songs);
+      if (!existing.leaderEmail && section.leaderEmail) {
+        existing.leaderEmail = section.leaderEmail;
+      }
+    } else {
+      merged.set(section.name, { ...section, songs: [...section.songs] });
+    }
+  }
+
   const results: SectionValidation[] = [];
 
-  for (const requiredSection of SECTION_NAMES) {
-    const section = weekData.sections.find((s) => s.name === requiredSection);
-
-    if (!section) {
-      results.push({
-        sectionName: requiredSection,
-        leaderEmail: null,
-        status: 'missing_leader',
-        songCount: 0,
-        songsWithLinks: 0,
-        songsWithoutLinks: [],
-      });
-      continue;
-    }
-
+  for (const section of merged.values()) {
     const songsWithoutLinks = section.songs
       .filter((s) => !s.youtubeUrl)
       .map((s) => s.title);
