@@ -4,13 +4,13 @@ import { Contacts } from './pages/Contacts';
 import { Overview } from './pages/Overview';
 import { Schedule } from './pages/Schedule';
 
-// Mirror server's getTargetSunday(): coming Sunday in CT local time.
-// Mon–Sat → (7 - day) days ahead; Sunday → 7 days ahead (next week).
+// Mirror server's getTargetSunday(): two-week look-ahead using CT local time.
+// Sunday → 7 days (next Sunday stays target until Monday); Mon–Sat → (7-day)+7.
 function getTargetSunday(): string {
   const CT_OFFSET_MS = 5 * 60 * 60 * 1000;
   const ct = new Date(Date.now() - CT_OFFSET_MS);
   const day = ct.getUTCDay();
-  const daysUntil = day === 0 ? 7 : (7 - day);
+  const daysUntil = day === 0 ? 7 : (7 - day) + 7;
   ct.setUTCDate(ct.getUTCDate() + daysUntil);
   ct.setUTCHours(0, 0, 0, 0);
   return new Date(ct.getTime() + CT_OFFSET_MS).toISOString().split('T')[0];

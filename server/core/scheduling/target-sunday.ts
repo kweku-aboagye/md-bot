@@ -7,7 +7,7 @@ const CT_OFFSET_MS = CT_OFFSET_HOURS * 60 * 60 * 1000;
 export function getTargetSunday(fromDate: Date = new Date()): Date {
   const ct = new Date(fromDate.getTime() - CT_OFFSET_MS);
   const day = ct.getUTCDay();
-  const daysUntil = day === 0 ? 7 : (7 - day);
+  const daysUntil = day === 0 ? 7 : (7 - day) + 7;
   ct.setUTCDate(ct.getUTCDate() + daysUntil);
   ct.setUTCHours(0, 0, 0, 0);
   return new Date(ct.getTime() + CT_OFFSET_MS);
