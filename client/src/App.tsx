@@ -4,16 +4,16 @@ import { Contacts } from './pages/Contacts';
 import { Overview } from './pages/Overview';
 import { Schedule } from './pages/Schedule';
 
-// Mirror server's getTargetSunday() from scheduler.ts exactly:
-// always returns the Sunday *2 weeks out* using UTC day arithmetic.
-// (If today is Sunday → 14 days; otherwise (7 - utcDay) + 7 days.)
+// Mirror server's getTargetSunday(): coming Sunday in CT local time.
+// Mon–Sat → (7 - day) days ahead; Sunday → 7 days ahead (next week).
 function getTargetSunday(): string {
-  const d = new Date();
-  const day = d.getUTCDay(); // 0 = Sunday
-  const daysUntil = day === 0 ? 14 : (7 - day) + 7;
-  d.setUTCDate(d.getUTCDate() + daysUntil);
-  d.setUTCHours(0, 0, 0, 0);
-  return d.toISOString().split('T')[0];
+  const CT_OFFSET_MS = 5 * 60 * 60 * 1000;
+  const ct = new Date(Date.now() - CT_OFFSET_MS);
+  const day = ct.getUTCDay();
+  const daysUntil = day === 0 ? 7 : (7 - day);
+  ct.setUTCDate(ct.getUTCDate() + daysUntil);
+  ct.setUTCHours(0, 0, 0, 0);
+  return new Date(ct.getTime() + CT_OFFSET_MS).toISOString().split('T')[0];
 }
 
 type Tab = 'overview' | 'schedule' | 'contacts';

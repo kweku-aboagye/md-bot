@@ -1,22 +1,21 @@
-export function getTargetSunday(fromDate: Date = new Date()): Date {
-  const day = fromDate.getUTCDay();
-  const daysUntilNextSunday = day === 0 ? 14 : (7 - day) + 7;
-
-  const target = new Date(fromDate);
-  target.setUTCDate(target.getUTCDate() + daysUntilNextSunday);
-  target.setUTCHours(0, 0, 0, 0);
-  return target;
-}
-
-export function formatISODate(date: Date): string {
-  return date.toISOString().split('T')[0];
-}
-
 // Fixed UTC−5 offset used throughout the scheduling module.
 // Central Time is UTC−6 during CST (Nov–Mar) and UTC−5 during CDT (Mar–Nov).
 // This codebase runs on a fixed UTC−5 schedule and does not adjust for DST.
 export const CT_OFFSET_HOURS = 5;
 const CT_OFFSET_MS = CT_OFFSET_HOURS * 60 * 60 * 1000;
+
+export function getTargetSunday(fromDate: Date = new Date()): Date {
+  const ct = new Date(fromDate.getTime() - CT_OFFSET_MS);
+  const day = ct.getUTCDay();
+  const daysUntil = day === 0 ? 7 : (7 - day);
+  ct.setUTCDate(ct.getUTCDate() + daysUntil);
+  ct.setUTCHours(0, 0, 0, 0);
+  return new Date(ct.getTime() + CT_OFFSET_MS);
+}
+
+export function formatISODate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
 
 // Returns the ISO date of the First Friday of the month within the prep window
 // (on or after fromDate, and on or before targetSunday), or null.
