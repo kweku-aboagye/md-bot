@@ -19,7 +19,7 @@
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.45.2",
     "express": "^5.0.1",
-    "googleapis": "^148.0.0",
+    "googleapis": "^171.4.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.5",
     "pg": "^8.16.3",
