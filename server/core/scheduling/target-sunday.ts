@@ -1,7 +1,7 @@
-// Fixed UTC−5 offset used throughout the scheduling module.
+// Hours to subtract from UTC to get the codebase's fixed local time (UTC−5).
 // Central Time is UTC−6 during CST (Nov–Mar) and UTC−5 during CDT (Mar–Nov).
 // This codebase runs on a fixed UTC−5 schedule and does not adjust for DST.
-export const CT_OFFSET_HOURS = 5;
+export const CT_OFFSET_HOURS = 5; // positive; subtract from UTC
 const CT_OFFSET_MS = CT_OFFSET_HOURS * 60 * 60 * 1000;
 
 export function getTargetSunday(fromDate: Date = new Date()): Date {

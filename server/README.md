@@ -84,10 +84,11 @@ Optional:
 - cron jobs only register when `NODE_ENV === "production"`
 - in production, the server also serves `client/dist` after API route registration
 - most modules use the shared target-Sunday rule in `core/scheduling/target-sunday.ts`:
-  the target is always the Sunday **two weeks out** from the current CT date, except on
-  Sunday itself where it is the **next Sunday** (7 days out). This means the planning
-  window advances on **Monday morning CT**, not on Sunday — matching the rehearsal cycle
-  where Sunday's rehearsal prepares for the following week's service.
+  the target is always the Sunday **two weeks out** from the current fixed UTC−5 date
+  (no DST adjustment), except on Sunday itself where it is the **next Sunday** (7 days
+  out). This means the planning window advances on **Monday morning UTC−5**, not on
+  Sunday — matching the rehearsal cycle where Sunday's rehearsal prepares for the
+  following week's service.
 - successful outgoing ministry emails are persisted in the shared `email_history` table
 
 ## Core API Surface
