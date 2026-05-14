@@ -18,6 +18,19 @@ function youtubeVideoId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+async function fetchYoutubeTitle(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
+    );
+    if (!res.ok) return null;
+    const data = await res.json() as { title?: string };
+    return data.title ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function isEmailAddress(text: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text.trim());
 }
@@ -276,5 +289,18 @@ export async function getServicesForWeek(
   }
 
   results.sort((a, b) => a.serviceDate.localeCompare(b.serviceDate));
+
+  // Resolve placeholder titles (youtu.be/<id>) for URL-only song entries
+  const pending = results
+    .flatMap(w => w.sections.flatMap(s => s.songs))
+    .filter(song => song.youtubeUrl && /^youtu\.be\//.test(song.title));
+
+  await Promise.all(
+    pending.map(async (song) => {
+      const title = await fetchYoutubeTitle(song.youtubeUrl!);
+      if (title) song.title = title;
+    })
+  );
+
   return results;
 }
