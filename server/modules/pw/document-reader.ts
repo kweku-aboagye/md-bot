@@ -13,6 +13,11 @@ function extractYoutubeUrl(text: string): string | null {
   return match ? match[0] : null;
 }
 
+function youtubeVideoId(url: string): string | null {
+  const m = url.match(/youtu\.be\/([^?&\s]+)/) || url.match(/[?&]v=([^&\s]+)/);
+  return m ? m[1] : null;
+}
+
 function isEmailAddress(text: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text.trim());
 }
@@ -186,10 +191,19 @@ function parseSectionsFromParagraphs(paragraphs: ParagraphInfo[]): SectionData[]
         title: cleanedTitle,
         youtubeUrl: p.youtubeUrl,
       });
-    } else if (p.youtubeUrl && currentSection.songs.length > 0) {
-      // URL-only line: attach to the preceding song if it's missing a link
-      const lastSong = currentSection.songs[currentSection.songs.length - 1];
-      if (!lastSong.youtubeUrl) lastSong.youtubeUrl = p.youtubeUrl;
+    } else if (p.youtubeUrl) {
+      const lastSong = currentSection.songs.at(-1);
+      if (lastSong && !lastSong.youtubeUrl) {
+        // URL-only line below a song missing a link: attach to it
+        lastSong.youtubeUrl = p.youtubeUrl;
+      } else {
+        // Standalone URL with no title: use the video ID as a fallback title
+        const videoId = youtubeVideoId(p.youtubeUrl);
+        currentSection.songs.push({
+          title: videoId ? `youtu.be/${videoId}` : p.youtubeUrl,
+          youtubeUrl: p.youtubeUrl,
+        });
+      }
     }
   }
 
