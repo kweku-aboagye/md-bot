@@ -186,6 +186,10 @@ function parseSectionsFromParagraphs(paragraphs: ParagraphInfo[]): SectionData[]
         title: cleanedTitle,
         youtubeUrl: p.youtubeUrl,
       });
+    } else if (p.youtubeUrl && currentSection.songs.length > 0) {
+      // URL-only line: attach to the preceding song if it's missing a link
+      const lastSong = currentSection.songs[currentSection.songs.length - 1];
+      if (!lastSong.youtubeUrl) lastSong.youtubeUrl = p.youtubeUrl;
     }
   }
 
