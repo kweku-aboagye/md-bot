@@ -108,7 +108,6 @@ interface ParagraphInfo {
   style: string;
   youtubeUrl: string | null;
   personEmail: string | null;
-  richLinkOnly: boolean; // true when content came solely from a YouTube smart chip
 }
 
 function extractParagraphs(content: any[]): ParagraphInfo[] {
@@ -123,12 +122,10 @@ function extractParagraphs(content: any[]): ParagraphInfo[] {
     let fullText = '';
     let linkUrl: string | null = null;
     let personEmail: string | null = null;
-    let hasTypedText = false;
 
     for (const el of para.elements || []) {
       if (el.textRun) {
         const text = el.textRun.content || '';
-        if (text.trim().length > 0) hasTypedText = true;
         fullText += text;
         const link = el.textRun.textStyle?.link?.url;
         if (link && isYoutubeUrl(link)) linkUrl = link;
@@ -148,7 +145,7 @@ function extractParagraphs(content: any[]): ParagraphInfo[] {
           // Only use the rich link title as a fallback when no typed text exists yet.
           // If the leader typed a title before the chip, don't append the video title
           // (that would cause duplication like "Amazing Grace Amazing Grace - YouTube").
-          if (!hasTypedText) {
+          if (!fullText.trim()) {
             const stripped = (rlProps.title || '').replace(/\s*[-–—]\s*YouTube\s*$/i, '').trim();
             fullText += stripped || uri;
           }
@@ -161,14 +158,12 @@ function extractParagraphs(content: any[]): ParagraphInfo[] {
     fullText = fullText.trim();
     if (!fullText) continue;
 
-    const richLinkOnly = !hasTypedText && linkUrl !== null;
     const inlineUrl = extractYoutubeUrl(fullText);
     paragraphs.push({
       text: fullText,
       style,
       youtubeUrl: linkUrl || inlineUrl,
       personEmail,
-      richLinkOnly,
     });
   }
 
@@ -207,31 +202,19 @@ function parseSectionsFromParagraphs(paragraphs: ParagraphInfo[]): SectionData[]
       .replace(/[-–—•*·]\s*/, '')
       .trim();
 
-    // Treat a standalone YouTube chip the same as a URL-only line so it attaches
-    // to the preceding song rather than creating a duplicate entry.
-    const isUrlOnly = p.richLinkOnly || cleanedTitle.length < 2;
-
-    if (!isUrlOnly && !isEmailAddress(cleanedTitle)) {
+    if (cleanedTitle.length >= 2 && !isEmailAddress(cleanedTitle)) {
       currentSection.songs.push({
         title: cleanedTitle,
         youtubeUrl: p.youtubeUrl,
       });
     } else if (p.youtubeUrl) {
-      const lastSong = currentSection.songs.at(-1);
-      if (lastSong && !lastSong.youtubeUrl) {
-        lastSong.youtubeUrl = p.youtubeUrl;
-      } else {
-        // No preceding unlinked song — create a new entry.
-        // For chips we already have a clean title; for bare URLs use the video ID
-        // as a placeholder so the oEmbed fetch can resolve the real title later.
-        const fallback = cleanedTitle.length >= 2
-          ? cleanedTitle
-          : (youtubeVideoId(p.youtubeUrl) ? `youtu.be/${youtubeVideoId(p.youtubeUrl)}` : p.youtubeUrl);
-        currentSection.songs.push({
-          title: fallback,
-          youtubeUrl: p.youtubeUrl,
-        });
-      }
+      // No title text (URL-only or chip-only line): create a song entry.
+      // Use the video ID as a placeholder; oEmbed will resolve the real title.
+      const videoId = youtubeVideoId(p.youtubeUrl);
+      currentSection.songs.push({
+        title: videoId ? `youtu.be/${videoId}` : p.youtubeUrl,
+        youtubeUrl: p.youtubeUrl,
+      });
     }
   }
 
