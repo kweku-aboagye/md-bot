@@ -18,14 +18,27 @@ function youtubeVideoId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+const oEmbedCache = new Map<string, string>();
+
 async function fetchYoutubeTitle(url: string): Promise<string | null> {
+  const videoId = youtubeVideoId(url);
+  const cacheKey = videoId ?? url;
+
+  if (oEmbedCache.has(cacheKey)) return oEmbedCache.get(cacheKey)!;
+
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(
-      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+      { signal: controller.signal }
     );
+    clearTimeout(timeout);
     if (!res.ok) return null;
     const data = await res.json() as { title?: string };
-    return data.title ?? null;
+    const title = data.title ?? null;
+    if (title) oEmbedCache.set(cacheKey, title);
+    return title;
   } catch {
     return null;
   }
