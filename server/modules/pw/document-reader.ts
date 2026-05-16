@@ -13,6 +13,37 @@ function extractYoutubeUrl(text: string): string | null {
   return match ? match[0] : null;
 }
 
+function youtubeVideoId(url: string): string | null {
+  const m = url.match(/youtu\.be\/([^?&\s]+)/) || url.match(/[?&]v=([^&\s]+)/);
+  return m ? m[1] : null;
+}
+
+const oEmbedCache = new Map<string, string>();
+
+async function fetchYoutubeTitle(url: string): Promise<string | null> {
+  const videoId = youtubeVideoId(url);
+  const cacheKey = videoId ?? url;
+
+  if (oEmbedCache.has(cacheKey)) return oEmbedCache.get(cacheKey)!;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const data = await res.json() as { title?: string };
+    const title = data.title ?? null;
+    if (title) oEmbedCache.set(cacheKey, title);
+    return title;
+  } catch {
+    return null;
+  }
+}
+
 function isEmailAddress(text: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text.trim());
 }
@@ -127,7 +158,10 @@ function extractParagraphs(content: any[]): ParagraphInfo[] {
           // Only use the rich link title as a fallback when no typed text exists yet.
           // If the leader typed a title before the chip, don't append the video title
           // (that would cause duplication like "Amazing Grace Amazing Grace - YouTube").
-          if (!fullText) fullText += rlProps.title || uri;
+          if (!fullText.trim()) {
+            const stripped = (rlProps.title || '').replace(/\s*[-–—]\s*YouTube\s*$/i, '').trim();
+            fullText += stripped || uri;
+          }
         } else {
           fullText += rlProps.title || uri;
         }
@@ -184,6 +218,14 @@ function parseSectionsFromParagraphs(paragraphs: ParagraphInfo[]): SectionData[]
     if (cleanedTitle.length >= 2 && !isEmailAddress(cleanedTitle)) {
       currentSection.songs.push({
         title: cleanedTitle,
+        youtubeUrl: p.youtubeUrl,
+      });
+    } else if (p.youtubeUrl) {
+      // No title text (URL-only or chip-only line): create a song entry.
+      // Use the video ID as a placeholder; oEmbed will resolve the real title.
+      const videoId = youtubeVideoId(p.youtubeUrl);
+      currentSection.songs.push({
+        title: videoId ? `youtu.be/${videoId}` : p.youtubeUrl,
         youtubeUrl: p.youtubeUrl,
       });
     }
@@ -258,5 +300,18 @@ export async function getServicesForWeek(
   }
 
   results.sort((a, b) => a.serviceDate.localeCompare(b.serviceDate));
+
+  // Resolve placeholder titles (youtu.be/<id>) for URL-only song entries
+  const pending = results
+    .flatMap(w => w.sections.flatMap(s => s.songs))
+    .filter(song => song.youtubeUrl && /^youtu\.be\//.test(song.title));
+
+  await Promise.all(
+    pending.map(async (song) => {
+      const title = await fetchYoutubeTitle(song.youtubeUrl!);
+      if (title) song.title = title;
+    })
+  );
+
   return results;
 }
