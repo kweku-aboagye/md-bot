@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { getAdminEmail, getEmailRoutingConfig } from '../config/resources';
+import { sendEmail } from '../email/mailer';
 import type { ScheduleInfo } from '../http/types';
 import { log } from '../logging/log';
 import { runCelestialCheck } from '../../modules/celestial/service';
@@ -8,6 +9,19 @@ import { checkHGHSelectionAndNotify } from '../../modules/hgh-selection/service'
 import { runValidation } from '../../modules/pw/service';
 import { runZamarPrep } from '../../modules/zamar/service';
 import { CT_OFFSET_HOURS, formatISODate, getTargetSunday, getUpcomingHalfNight } from './target-sunday';
+
+async function notifySchedulerError(jobName: string, err: Error) {
+  const adminEmail = getAdminEmail();
+  try {
+    await sendEmail({
+      to: adminEmail,
+      subject: `[MD Bot] Scheduler error: ${jobName}`,
+      body: `The scheduled job "${jobName}" failed at ${new Date().toISOString()}.\n\nError: ${err.message}\n\nThis means the check did not run and no reminder was sent if one was due.`,
+    });
+  } catch {
+    // If the email itself fails, there's nothing more we can do — already logged above.
+  }
+}
 
 const CT_9AM_UTC = 9 + CT_OFFSET_HOURS;
 const CT_NOON_UTC = 12 + CT_OFFSET_HOURS;
@@ -75,6 +89,7 @@ export async function startScheduler() {
       await runValidation('scheduled');
     } catch (err: any) {
       log(`P&W scheduled error: ${err.message}`, 'scheduler');
+      await notifySchedulerError('P&W validation', err);
     }
   });
 
@@ -84,6 +99,7 @@ export async function startScheduler() {
       await runCelestialCheck('scheduled');
     } catch (err: any) {
       log(`Celestial check error: ${err.message}`, 'scheduler');
+      await notifySchedulerError('Celestial hymn check', err);
     }
   });
 
@@ -93,6 +109,7 @@ export async function startScheduler() {
       await runHghReport('scheduled');
     } catch (err: any) {
       log(`HGH gap report error: ${err.message}`, 'scheduler');
+      await notifySchedulerError('HGH gap report', err);
     }
   });
 
@@ -102,6 +119,7 @@ export async function startScheduler() {
       await checkHGHSelectionAndNotify('scheduled');
     } catch (err: any) {
       log(`HGH selection check error: ${err.message}`, 'scheduler');
+      await notifySchedulerError('HGH selection check', err);
     }
   });
 
@@ -111,6 +129,7 @@ export async function startScheduler() {
       await runZamarPrep('scheduled');
     } catch (err: any) {
       log(`Zamar prep error: ${err.message}`, 'scheduler');
+      await notifySchedulerError('Zamar prep list', err);
     }
   });
 
