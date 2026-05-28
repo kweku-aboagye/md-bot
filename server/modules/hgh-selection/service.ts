@@ -61,6 +61,11 @@ export async function checkHGHSelectionAndNotify(
     return;
   }
 
+  if (!adminEmail) {
+    log('No ADMIN_EMAIL configured — skipping HGH selection reminder', 'hgh-selection');
+    return;
+  }
+
   log(`No HGH song logged for ${status.targetSunday} - sending reminder`, 'hgh-selection');
 
   const email = buildHghSelectionReminderEmail(status.targetSunday);

@@ -1,11 +1,11 @@
 export interface ScheduleInfo {
-  adminEmail: string;
+  adminEmail: string | null;
   nextRunAt: string;
   targetSunday: string;
   upcomingHalfNight: string | null;
   emailRouting: {
     pwIncomplete: string;
-    pwMissingLeader: string;
+    pwMissingLeader: string[];
     celestial: string[];
     hghSelection: string[];
     hghGap: string[];

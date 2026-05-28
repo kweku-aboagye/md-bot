@@ -13,6 +13,12 @@ export async function runHghReport(trigger: 'scheduled' | 'manual' = 'manual') {
   const adminEmail = getAdminEmail();
   log(`Running HGH gap report (trigger: ${trigger})`, 'hgh-gap');
   const result = await runHghGapFinder();
+
+  if (!adminEmail) {
+    log('No ADMIN_EMAIL configured — skipping HGH gap report email', 'hgh-gap');
+    return result;
+  }
+
   const email = buildHghGapReportEmail(result);
 
   await sendTrackedEmail({

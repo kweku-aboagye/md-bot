@@ -74,7 +74,9 @@ export async function sendValidationEmails(
 
     if (v.status === 'missing_leader') {
       let adminEmailSent = false;
-      try {
+      if (!adminEmail) {
+        log(`No ADMIN_EMAIL configured — skipping admin notification for ${v.sectionName}`, 'validator');
+      } else try {
         const email = buildAdminEmail(v.sectionName, formattedDate);
         const subject = `Action Needed: Missing Leader for ${v.sectionName} - ${formattedDate}`;
         await sendTrackedEmail({

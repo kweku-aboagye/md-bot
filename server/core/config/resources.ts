@@ -1,16 +1,4 @@
 export const DOCUMENT_ID = '1SD2t9J7jYZUnN9QDOr2TWgtfkEkOfe4yuxYYb1_WwLY';
-export const DEFAULT_ADMIN_EMAIL = 'hello@kwekuaboagye.me';
-const DEFAULT_CELESTIAL_NOTIFICATION_EMAILS = ['KelvinSam223@gmail.com'] as const;
-const DEFAULT_ZAMAR_BAND_EMAILS = [
-  DEFAULT_CELESTIAL_NOTIFICATION_EMAILS[0],
-  'imlawklufio@gmail.com',
-  'Tntaamah26@gmail.com',
-] as const;
-
-export function getAdminEmail() {
-  return process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
-}
-
 function parseEmailList(value: string | undefined) {
   return (value || '')
     .split(',')
@@ -18,34 +6,39 @@ function parseEmailList(value: string | undefined) {
     .filter(Boolean);
 }
 
-function getEnvEmailList(name: string, fallback: readonly string[]) {
-  const configured = parseEmailList(process.env[name]);
-  return configured.length > 0 ? configured : [...fallback];
+export function getAdminEmail(): string | null {
+  return process.env.ADMIN_EMAIL?.trim() || null;
 }
 
-function withAdminEmail(emails: readonly string[]) {
-  return Array.from(new Set([...emails, getAdminEmail()]));
+function withAdminEmail(emails: string[]) {
+  const admin = getAdminEmail();
+  return admin ? Array.from(new Set([...emails, admin])) : [...emails];
 }
 
-export function getCelestialNotificationEmails() {
-  return withAdminEmail(
-    getEnvEmailList('CELESTIAL_NOTIFICATION_EMAILS', DEFAULT_CELESTIAL_NOTIFICATION_EMAILS)
-  );
+export function getCelestialChoirEmails() {
+  return withAdminEmail(parseEmailList(process.env.CELESTIAL_CHOIR_EMAILS));
 }
 
 export function getZamarBandEmails() {
-  return withAdminEmail(getEnvEmailList('ZAMAR_BAND_EMAILS', DEFAULT_ZAMAR_BAND_EMAILS));
+  return withAdminEmail(parseEmailList(process.env.ZAMAR_BAND_EMAILS));
+}
+
+export function getPraiseAndWorshipEmails() {
+  return withAdminEmail(parseEmailList(process.env.PRAISE_AND_WORSHIP_EMAILS));
+}
+
+export function getHisGloryHeraldsEmails() {
+  return withAdminEmail(parseEmailList(process.env.HIS_GLORY_HERALDS_EMAILS));
 }
 
 export function getEmailRoutingConfig() {
   const adminEmail = getAdminEmail();
-
   return {
     pwIncomplete: 'Section leader',
-    pwMissingLeader: adminEmail,
-    celestial: getCelestialNotificationEmails(),
-    hghSelection: [adminEmail],
-    hghGap: [adminEmail],
+    pwMissingLeader: getPraiseAndWorshipEmails(),
+    celestial: getCelestialChoirEmails(),
+    hghSelection: getHisGloryHeraldsEmails(),
+    hghGap: adminEmail ? [adminEmail] : [],
     zamar: getZamarBandEmails(),
   };
 }

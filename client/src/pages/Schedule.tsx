@@ -29,13 +29,13 @@ const ROWS = [
 ];
 
 interface ScheduleInfo {
-  adminEmail: string;
+  adminEmail: string | null;
   nextRunAt: string;
   targetSunday: string;
   upcomingHalfNight: string | null;
   emailRouting: {
     pwIncomplete: string;
-    pwMissingLeader: string;
+    pwMissingLeader: string[];
     celestial: string[];
     hghSelection: string[];
     hghGap: string[];
@@ -105,15 +105,14 @@ function useScheduleInfo() {
 
 export function Schedule() {
   const { data, loading, error, reload } = useScheduleInfo();
-  const adminEmail = data?.adminEmail ?? 'Configured admin email';
   const emailRouting = data?.emailRouting;
   const emails = [
     { trigger: "Praise & Worship missing songs or links", freq: "Mon–Sat 2×/day", color: T.indigo, to: emailRouting?.pwIncomplete ?? "Section leader" },
-    { trigger: "Praise & Worship leader missing", freq: "Mon–Sat 2×/day", color: T.red, to: emailRouting?.pwMissingLeader ?? adminEmail },
-    { trigger: "Celestial Choir hymn not selected", freq: "Mon–Sat 2×/day", color: T.purple, to: emailRouting?.celestial.join(', ') ?? adminEmail },
-    { trigger: "His Glory Heralds song not selected", freq: "Mon–Sat 2×/day", color: T.amber, to: emailRouting?.hghSelection.join(', ') ?? adminEmail },
-    { trigger: "His Glory Heralds Gap Report", freq: "Every Monday", color: T.yellow, to: emailRouting?.hghGap.join(', ') ?? adminEmail },
-    { trigger: "Zamar Band Prep List", freq: "Every Wednesday", color: T.teal, to: emailRouting?.zamar.join(', ') ?? adminEmail },
+    { trigger: "Praise & Worship leader missing", freq: "Mon–Sat 2×/day", color: T.red, to: emailRouting?.pwMissingLeader.join(', ') ?? 'Not configured' },
+    { trigger: "Celestial Choir hymn not selected", freq: "Mon–Sat 2×/day", color: T.purple, to: emailRouting?.celestial.join(', ') ?? 'Not configured' },
+    { trigger: "His Glory Heralds song not selected", freq: "Mon–Sat 2×/day", color: T.amber, to: emailRouting?.hghSelection.join(', ') ?? 'Not configured' },
+    { trigger: "His Glory Heralds Gap Report", freq: "Every Monday", color: T.yellow, to: emailRouting?.hghGap.join(', ') ?? 'Not configured' },
+    { trigger: "Zamar Band Prep List", freq: "Every Wednesday", color: T.teal, to: emailRouting?.zamar.join(', ') ?? 'Not configured' },
   ];
 
   return (
