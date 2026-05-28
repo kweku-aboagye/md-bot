@@ -60,4 +60,13 @@ export async function ensureInternalTables() {
     create index if not exists sms_history_sent_at_idx
     on sms_history (sent_at desc)
   `);
+
+  await pool.query(`
+    create table if not exists sms_opt_in (
+      id text primary key,
+      phone text not null,
+      ip text,
+      consented_at timestamptz not null
+    )
+  `);
 }
