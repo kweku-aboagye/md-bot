@@ -29,7 +29,7 @@ const ROWS = [
 ];
 
 interface ScheduleInfo {
-  adminEmails: string[];
+  adminEmail: string | null;
   nextRunAt: string;
   targetSunday: string;
   upcomingHalfNight: string | null;

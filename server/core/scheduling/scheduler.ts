@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { getAdminEmails, getEmailRoutingConfig } from '../config/resources';
+import { getAdminEmail, getEmailRoutingConfig } from '../config/resources';
 import type { ScheduleInfo } from '../http/types';
 import { log } from '../logging/log';
 import { runCelestialCheck } from '../../modules/celestial/service';
@@ -55,7 +55,7 @@ export function getNextScheduledRun(): ScheduleInfo {
   const targetSundayDate = getTargetSunday(nextRunUtc);
 
   return {
-    adminEmails: getAdminEmails(),
+    adminEmail: getAdminEmail(),
     nextRunAt: nextRunUtc.toISOString(),
     targetSunday: formatISODate(targetSundayDate),
     upcomingHalfNight: getUpcomingHalfNight(now, targetSundayDate),

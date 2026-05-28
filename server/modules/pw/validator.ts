@@ -1,4 +1,4 @@
-import { getAdminEmails } from '../../core/config/resources';
+import { getAdminEmail } from '../../core/config/resources';
 import type { EmailTrigger } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { formatEmailDate } from '../../core/email/reminder-template';
@@ -65,7 +65,7 @@ export async function sendValidationEmails(
     targetSunday: string;
   }
 ): Promise<EmailSent[]> {
-  const adminEmails = getAdminEmails();
+  const adminEmail = getAdminEmail();
   const emailsSent: EmailSent[] = [];
   const formattedDate = formatEmailDate(weekData.serviceDate);
 
@@ -74,11 +74,13 @@ export async function sendValidationEmails(
 
     if (v.status === 'missing_leader') {
       let adminEmailSent = false;
-      try {
+      if (!adminEmail) {
+        log(`No ADMIN_EMAIL configured — skipping admin notification for ${v.sectionName}`, 'validator');
+      } else try {
         const email = buildAdminEmail(v.sectionName, formattedDate);
         const subject = `Action Needed: Missing Leader for ${v.sectionName} - ${formattedDate}`;
         await sendTrackedEmail({
-          to: adminEmails,
+          to: adminEmail,
           subject,
           body: email.text,
           html: email.html,
@@ -101,12 +103,12 @@ export async function sendValidationEmails(
           },
         });
         emailsSent.push({
-          to: adminEmails,
+          to: adminEmail,
           type: 'admin_missing_leader',
           sectionName: v.sectionName,
           sentAt: new Date().toISOString(),
         });
-        log(`Admin email sent to ${adminEmails.join(', ')} for missing leader in ${v.sectionName}`, 'validator');
+        log(`Admin email sent to ${adminEmail} for missing leader in ${v.sectionName}`, 'validator');
         adminEmailSent = true;
       } catch (err: any) {
         log(`Failed to send admin email for ${v.sectionName}: ${err.message}`, 'validator');

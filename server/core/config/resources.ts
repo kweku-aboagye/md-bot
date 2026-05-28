@@ -6,37 +6,39 @@ function parseEmailList(value: string | undefined) {
     .filter(Boolean);
 }
 
-function withAdminEmails(emails: string[]) {
-  return Array.from(new Set([...emails, ...getAdminEmails()]));
+export function getAdminEmail(): string | null {
+  return process.env.ADMIN_EMAIL?.trim() || null;
 }
 
-export function getAdminEmails() {
-  return parseEmailList(process.env.ADMIN_EMAIL);
+function withAdminEmail(emails: string[]) {
+  const admin = getAdminEmail();
+  return admin ? Array.from(new Set([...emails, admin])) : [...emails];
 }
 
 export function getCelestialChoirEmails() {
-  return withAdminEmails(parseEmailList(process.env.CELESTIAL_CHOIR_EMAILS));
+  return withAdminEmail(parseEmailList(process.env.CELESTIAL_CHOIR_EMAILS));
 }
 
 export function getZamarBandEmails() {
-  return withAdminEmails(parseEmailList(process.env.ZAMAR_BAND_EMAILS));
+  return withAdminEmail(parseEmailList(process.env.ZAMAR_BAND_EMAILS));
 }
 
 export function getPraiseAndWorshipEmails() {
-  return withAdminEmails(parseEmailList(process.env.PRAISE_AND_WORSHIP_EMAILS));
+  return withAdminEmail(parseEmailList(process.env.PRAISE_AND_WORSHIP_EMAILS));
 }
 
 export function getHisGloryHeraldsEmails() {
-  return withAdminEmails(parseEmailList(process.env.HIS_GLORY_HERALDS_EMAILS));
+  return withAdminEmail(parseEmailList(process.env.HIS_GLORY_HERALDS_EMAILS));
 }
 
 export function getEmailRoutingConfig() {
+  const adminEmail = getAdminEmail();
   return {
     pwIncomplete: 'Section leader',
     pwMissingLeader: getPraiseAndWorshipEmails(),
     celestial: getCelestialChoirEmails(),
     hghSelection: getHisGloryHeraldsEmails(),
-    hghGap: getAdminEmails(),
+    hghGap: adminEmail ? [adminEmail] : [],
     zamar: getZamarBandEmails(),
   };
 }
