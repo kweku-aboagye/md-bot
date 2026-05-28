@@ -1,4 +1,4 @@
-import { getAdminEmail } from '../../core/config/resources';
+import { getAdminEmails } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { log } from '../../core/logging/log';
@@ -10,13 +10,13 @@ export { runHghGapFinder };
 
 export async function runHghReport(trigger: 'scheduled' | 'manual' = 'manual') {
   const runId = createRunId();
-  const adminEmail = getAdminEmail();
+  const adminEmails = getAdminEmails();
   log(`Running HGH gap report (trigger: ${trigger})`, 'hgh-gap');
   const result = await runHghGapFinder();
   const email = buildHghGapReportEmail(result);
 
   await sendTrackedEmail({
-    to: adminEmail,
+    to: adminEmails,
     subject: `HGH Gap Report — ${result.unministeredSongs.length} songs remaining in playlist`,
     body: email.text,
     html: email.html,
@@ -34,7 +34,7 @@ export async function runHghReport(trigger: 'scheduled' | 'manual' = 'manual') {
     },
   });
 
-  log(`HGH gap report sent to ${adminEmail}`, 'hgh-gap');
+  log(`HGH gap report sent to ${adminEmails.join(', ')}`, 'hgh-gap');
 
   const adminPhone = getAdminPhone();
   if (adminPhone) {

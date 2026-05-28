@@ -1,4 +1,4 @@
-import { CELESTIAL_COL_DATE, CELESTIAL_COL_EVENT, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, getCelestialNotificationEmails } from '../../core/config/resources';
+import { CELESTIAL_COL_DATE, CELESTIAL_COL_EVENT, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, getCelestialChoirEmails } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { readSheetTab } from '../../core/google/sheets';
@@ -84,7 +84,7 @@ export async function runCelestialCheck(
   trigger: 'scheduled' | 'manual' = 'manual'
 ): Promise<CelestialCheckResult> {
   const runId = createRunId();
-  const recipients = getCelestialNotificationEmails();
+  const recipients = getCelestialChoirEmails();
   const result = await checkCelestialHymn(getTargetSunday());
   log(`Running Celestial hymn check (trigger: ${trigger}) for ${result.targetSunday}`, 'celestial');
 

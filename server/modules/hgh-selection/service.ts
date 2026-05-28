@@ -22,7 +22,7 @@
  *   or GMAIL_USER / GMAIL_APP_PASSWORD
  */
 
-import { getAdminEmail, HGH_COL_DATE, HGH_COL_TITLE, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
+import { getAdminEmails, HGH_COL_DATE, HGH_COL_TITLE, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { log } from '../../core/logging/log';
@@ -52,7 +52,7 @@ export async function checkHGHSelectionAndNotify(
   trigger: 'scheduled' | 'manual' = 'manual'
 ): Promise<void> {
   const runId = createRunId();
-  const adminEmail = getAdminEmail();
+  const adminEmails = getAdminEmails();
   const status = await getHghSelectionStatus();
   log(`Checking HGH song selection for ${status.targetSunday}`, 'hgh-selection');
 
@@ -65,7 +65,7 @@ export async function checkHGHSelectionAndNotify(
 
   const email = buildHghSelectionReminderEmail(status.targetSunday);
   await sendTrackedEmail({
-    to: adminEmail,
+    to: adminEmails,
     subject: `HGH: No song logged for ${status.targetSunday}`,
     body: email.text,
     html: email.html,
@@ -81,7 +81,7 @@ export async function checkHGHSelectionAndNotify(
     },
   });
 
-  log(`HGH selection reminder sent to ${adminEmail}`, 'hgh-selection');
+  log(`HGH selection reminder sent to ${adminEmails.join(', ')}`, 'hgh-selection');
 
   const adminPhone = getAdminPhone();
   if (adminPhone) {
