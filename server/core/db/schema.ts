@@ -29,6 +29,13 @@ export const phoneContacts = pgTable('phone_contacts', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
 });
 
+export const smsOptIn = pgTable('sms_opt_in', {
+  id: text('id').primaryKey(),
+  phone: text('phone').notNull(),
+  ip: text('ip'),
+  consentedAt: timestamp('consented_at', { withTimezone: true }).notNull(),
+});
+
 export const smsHistory = pgTable('sms_history', {
   id: text('id').primaryKey(),
   runId: text('run_id').notNull(),

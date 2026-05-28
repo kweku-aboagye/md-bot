@@ -4,6 +4,7 @@ import { sendEmail } from '../email/mailer';
 import { log } from '../logging/log';
 import { getNextScheduledRun } from '../scheduling/scheduler';
 import { registerContactsRoutes } from './contactsRoutes';
+import { registerSmsSignupRoutes } from './smsSignupRoutes';
 import { registerCelestialRoutes } from '../../modules/celestial/routes';
 import { registerHghGapRoutes } from '../../modules/hgh-gap/routes';
 import { registerHghSelectionRoutes } from '../../modules/hgh-selection/routes';
@@ -49,6 +50,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   registerHghGapRoutes(app);
   registerZamarRoutes(app);
   registerContactsRoutes(app);
+  registerSmsSignupRoutes(app);
 
   return httpServer;
 }

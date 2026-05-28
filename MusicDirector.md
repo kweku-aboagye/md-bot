@@ -106,17 +106,17 @@ I coordinate planning of some church events that highly involve music. Here are 
 
 I am a believer in automation and I think a lot about how i can automate certain aspects of my role, to ensure that I have time to prioritize the most important parts. Here are a few projects i have taken on to try this
 
-[https://github.com/kweku-aboagye/hgh-song-tracker-gap-finder](https://github.com/kweku-aboagye/hgh-song-tracker-gap-finder)
+1. https://github.com/kweku-aboagye/md-bot
 
-- i used it like once to double check which songs in our Heralds playlist we have not ministered yet
+- Ogranization and automation platform I created to remind my leaders of deliverables and give me a one stop shop of all the music setlists we have for a target Sunday
 
-[https://github.com/kweku-aboagye/vocal-extractor-pro](https://github.com/kweku-aboagye/vocal-extractor-pro)
+Older projects which i combined to form this are:
+- https://github.com/kweku-aboagye/hgh-song-tracker-gap-finder
+- https://github.com/kweku-aboagye/worship-flow
+
+2. https://github.com/kweku-aboagye/vocal-extractor-pro
 
 - tried this to automate isolating vocals to help with hearing harmonies, but it doesnt really work in production because of yt-dlp
-
-https://github.com/kweku-aboagye/worship-flow
-
-- early version app which i used to send reminders to the Praise and Worship team to put their music. It kinda works
 
 ## Top of Minds
 
