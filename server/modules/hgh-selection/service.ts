@@ -17,7 +17,9 @@
  * non-empty. A match means the song has already been selected/pre-logged.
  *
  * Requires env vars:
- *   ADMIN_EMAIL             — set in schema.ts constant
+ *   HIS_GLORY_HERALDS_EMAILS — comma-separated list of herald emails
+ *   ADMIN_EMAIL              — always appended to email recipients
+ *   ADMIN_PHONE              — receives SMS directly (E.164 format)
  *   Either RESEND_API_KEY / RESEND_FROM_EMAIL
  *   or GMAIL_USER / GMAIL_APP_PASSWORD
  */
@@ -90,17 +92,21 @@ export async function checkHGHSelectionAndNotify(
 
   log(`HGH selection reminder sent to ${recipients.join(', ')}`, 'hgh-selection');
 
-  const groupEmails = recipients.filter(e => e !== adminEmail);
-  const groupPhones = await getPhonesForEmails(groupEmails);
-  const adminPhone = getAdminPhone();
-  const allPhones = [...new Set([...groupPhones, ...(adminPhone ? [adminPhone] : [])])];
-  if (allPhones.length > 0) {
-    await sendTrackedSms({
-      to: allPhones,
-      body: `[MD Bot] HGH reminder: no song has been logged for Sun ${status.targetSunday} yet. Check your email for details.`,
-      module: 'hgh-selection',
-      trigger,
-      runId,
-    });
+  try {
+    const groupEmails = recipients.filter(e => e !== adminEmail);
+    const groupPhones = await getPhonesForEmails(groupEmails);
+    const adminPhone = getAdminPhone();
+    const allPhones = [...new Set([...groupPhones, ...(adminPhone ? [adminPhone] : [])])];
+    if (allPhones.length > 0) {
+      await sendTrackedSms({
+        to: allPhones,
+        body: `[MD Bot] HGH reminder: no song has been logged for Sun ${status.targetSunday} yet. Check your email for details.`,
+        module: 'hgh-selection',
+        trigger,
+        runId,
+      });
+    }
+  } catch (err: any) {
+    log(`Failed to send HGH selection reminder SMS: ${err.message}`, 'hgh-selection');
   }
 }
