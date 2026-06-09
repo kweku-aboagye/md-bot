@@ -1,4 +1,4 @@
-import { CELESTIAL_COL_DATE, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, DOCUMENT_ID, getZamarBandEmails, HGH_COL_DATE, HGH_COL_TITLE, HGH_DATA_START_ROW, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
+import { CELESTIAL_COL_DATE, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, DOCUMENT_ID, getAdminEmail, getZamarBandEmails, HGH_COL_DATE, HGH_COL_TITLE, HGH_DATA_START_ROW, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { formatEmailDate } from '../../core/email/reminder-template';
@@ -6,7 +6,7 @@ import { readCellLink, readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
 import { getPhonesForEmails } from '../../core/sms/contacts';
-import { sendTrackedSms } from '../../core/sms/texter';
+import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { getServicesForWeek } from '../pw/document-reader';
 import { buildZamarPrepEmail } from './email';
 import type { ZamarPrepResult, ZamarSong } from './types';
@@ -206,10 +206,14 @@ export async function runZamarPrep(
 
   if (result.emailSent) {
     try {
-      const phones = await getPhonesForEmails(recipients);
-      if (phones.length > 0) {
+      const adminEmail = getAdminEmail();
+      const groupEmails = recipients.filter(e => e !== adminEmail);
+      const groupPhones = await getPhonesForEmails(groupEmails);
+      const adminPhone = getAdminPhone();
+      const allPhones = [...new Set([...groupPhones, ...(adminPhone ? [adminPhone] : [])])];
+      if (allPhones.length > 0) {
         await sendTrackedSms({
-          to: phones,
+          to: allPhones,
           body: `[MD Bot] Zamar prep list for Sun ${result.targetSunday} is ready (${result.songs.length} songs). Check your email for details.`,
           module: 'zamar',
           trigger,
