@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
-import { phoneContacts } from '../db/schema';
+import { phoneContacts, smsOptIn } from '../db/schema';
 
 export async function getPhoneForEmail(email: string): Promise<string | null> {
   const rows = await db
@@ -9,17 +9,37 @@ export async function getPhoneForEmail(email: string): Promise<string | null> {
     .from(phoneContacts)
     .where(eq(phoneContacts.email, email.toLowerCase()))
     .limit(1);
-  return rows[0]?.phone ?? null;
+
+  const phone = rows[0]?.phone ?? null;
+  if (!phone) return null;
+
+  const opted = await db
+    .select({ id: smsOptIn.id })
+    .from(smsOptIn)
+    .where(eq(smsOptIn.phone, phone))
+    .limit(1);
+
+  return opted.length > 0 ? phone : null;
 }
 
 export async function getPhonesForEmails(emails: string[]): Promise<string[]> {
   if (emails.length === 0) return [];
   const normalized = [...new Set(emails.map((e) => e.toLowerCase()))];
-  const rows = await db
+  const contactRows = await db
     .select({ phone: phoneContacts.phone })
     .from(phoneContacts)
     .where(inArray(phoneContacts.email, normalized));
-  return [...new Set(rows.map((r) => r.phone))];
+
+  const phones = [...new Set(contactRows.map((r) => r.phone))];
+  if (phones.length === 0) return [];
+
+  const optedRows = await db
+    .select({ phone: smsOptIn.phone })
+    .from(smsOptIn)
+    .where(inArray(smsOptIn.phone, phones));
+
+  const optedSet = new Set(optedRows.map((r) => r.phone));
+  return phones.filter((p) => optedSet.has(p));
 }
 
 export async function upsertContact(contact: {
