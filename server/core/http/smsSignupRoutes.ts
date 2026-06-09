@@ -7,7 +7,7 @@ import { log } from '../logging/log';
 import { sendTrackedSms } from '../sms/texter';
 
 const OPT_IN_BODY =
-  "[MD Bot] You're now opted in to SMS reminders from Kweku Aboagye. Msg frequency ~2-6/mo. Msg&Data rates may apply. Reply STOP to cancel, HELP for help.";
+  "🤖 You're now opted in to SMS reminders from Kweku Aboagye. Msg frequency ~2-6/mo. Msg&Data rates may apply. Reply STOP to cancel, HELP for help.";
 
 function normalizePhone(raw: string): string | null {
   const digits = raw.replace(/\D/g, '');

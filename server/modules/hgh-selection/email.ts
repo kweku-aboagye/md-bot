@@ -8,16 +8,16 @@ export function buildHghSelectionReminderEmail(targetSunday: string) {
   const formattedDate = formatEmailDate(targetSunday);
 
   return buildReminderEmail({
-    title: 'HGH: Song Not Yet Logged',
+    title: 'His Glory Heralds: Song Not Yet Logged',
     metaLine: `For ${formattedDate}`,
     tone: 'warning',
-    highlightTitle: `No HGH song has been logged for ${formattedDate}`,
+    highlightTitle: `No song has been logged for His Glory Heralds this ${formattedDate}`,
     paragraphs: [
-      'The HGH Song Collection sheet does not show an entry for the upcoming service.',
+      'The His Glory Heralds Song Collection sheet does not show an entry for the upcoming service.',
       'Please update the sheet with the planned song selection.',
     ],
     action: {
-      label: 'Open HGH Song Collection sheet',
+      label: 'Open His Glory Heralds Song Collection sheet',
       url: `https://docs.google.com/spreadsheets/d/${HGH_SHEET_ID}`,
     },
   });

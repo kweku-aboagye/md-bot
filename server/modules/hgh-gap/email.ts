@@ -55,7 +55,7 @@ export function buildHghGapReportEmail(result: HghGapResult) {
     : 'All playlist songs have been ministered. Time to refresh the playlist.';
 
   return buildReportEmail({
-    title: 'HGH Weekly Gap Report',
+    title: 'His Glory Heralds Weekly Gap Report',
     metaLine: `Generated ${new Date(result.ranAt).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`,
     stats: [
       { label: 'Total in playlist', value: totalPlaylistSongs },

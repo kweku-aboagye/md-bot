@@ -75,7 +75,7 @@ export async function checkHGHSelectionAndNotify(
   const email = buildHghSelectionReminderEmail(status.targetSunday);
   await sendTrackedEmail({
     to: recipients,
-    subject: `HGH: No song logged for ${status.targetSunday}`,
+    subject: `Action needed: His Glory Heralds has not logged a song for ${status.targetSunday}`,
     body: email.text,
     html: email.html,
     history: {
@@ -100,7 +100,7 @@ export async function checkHGHSelectionAndNotify(
     if (allPhones.length > 0) {
       await sendTrackedSms({
         to: allPhones,
-        body: `[MD Bot] HGH reminder: no song has been logged for Sun ${status.targetSunday} yet. Check your email for details.`,
+        body: `🤖 Action needed: no song has been logged for His Glory Heralds this Sunday (${status.targetSunday}). Check your email for more details.`,
         module: 'hgh-selection',
         trigger,
         runId,
