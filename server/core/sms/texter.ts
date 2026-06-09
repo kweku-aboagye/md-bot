@@ -73,7 +73,7 @@ export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<SendTrac
             await db.delete(smsOptIn).where(eq(smsOptIn.phone, phone));
             log(`Removed opted-out number ${maskPhone(phone)} from sms_opt_in`, 'texter');
           } catch (delErr: any) {
-            log(`Failed to remove opted-out number from sms_opt_in: ${delErr.message}`, 'texter');
+            log(`Failed to remove opted-out number ${maskPhone(phone)} from sms_opt_in: ${delErr?.message || String(delErr)}`, 'texter');
           }
         }
       }
