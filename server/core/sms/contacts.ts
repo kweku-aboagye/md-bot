@@ -1,12 +1,13 @@
 import { randomUUID } from 'crypto';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
-import { phoneContacts } from '../db/schema';
+import { phoneContacts, smsOptIn } from '../db/schema';
 
 export async function getPhoneForEmail(email: string): Promise<string | null> {
   const rows = await db
     .select({ phone: phoneContacts.phone })
     .from(phoneContacts)
+    .innerJoin(smsOptIn, eq(smsOptIn.phone, phoneContacts.phone))
     .where(eq(phoneContacts.email, email.toLowerCase()))
     .limit(1);
   return rows[0]?.phone ?? null;
@@ -18,6 +19,7 @@ export async function getPhonesForEmails(emails: string[]): Promise<string[]> {
   const rows = await db
     .select({ phone: phoneContacts.phone })
     .from(phoneContacts)
+    .innerJoin(smsOptIn, eq(smsOptIn.phone, phoneContacts.phone))
     .where(inArray(phoneContacts.email, normalized));
   return [...new Set(rows.map((r) => r.phone))];
 }
