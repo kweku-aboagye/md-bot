@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
 import { db } from '../db';
-import { smsHistory } from '../db/schema';
+import { smsHistory, smsOptIn } from '../db/schema';
 import { log } from '../logging/log';
 
 export interface SendTrackedSmsArgs {
@@ -32,11 +33,17 @@ async function createTwilioClient() {
   );
 }
 
-export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<void> {
-  if (!isTwilioConfigured()) return;
+export interface SendTrackedSmsResult {
+  /** Phones rejected by Twilio with error 21610 (recipient opted out via STOP). */
+  optedOut: Set<string>;
+}
+
+export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<SendTrackedSmsResult> {
+  const result: SendTrackedSmsResult = { optedOut: new Set() };
+  if (!isTwilioConfigured()) return result;
 
   const recipients = Array.isArray(args.to) ? args.to : [args.to];
-  if (recipients.length === 0) return;
+  if (recipients.length === 0) return result;
 
   const client = await createTwilioClient();
 
@@ -59,6 +66,16 @@ export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<void> {
         status = 'failed';
         error = err.message || String(err);
         log(`SMS failed to ${maskPhone(phone)}: ${error}`, 'texter');
+        // Twilio error 21610 means the recipient opted out — remove from opt-in table
+        if (err.code === 21610) {
+          result.optedOut.add(phone);
+          try {
+            await db.delete(smsOptIn).where(eq(smsOptIn.phone, phone));
+            log(`Removed opted-out number ${maskPhone(phone)} from sms_opt_in`, 'texter');
+          } catch (delErr: any) {
+            log(`Failed to remove opted-out number ${maskPhone(phone)} from sms_opt_in: ${delErr?.message || String(delErr)}`, 'texter');
+          }
+        }
       }
 
       try {
@@ -79,6 +96,8 @@ export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<void> {
       }
     })
   );
+
+  return result;
 }
 
 export function getAdminPhone(): string | null {

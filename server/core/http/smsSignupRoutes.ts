@@ -41,10 +41,16 @@ export function registerSmsSignupRoutes(app: Express): void {
 
     const runId = `signup_${randomUUID()}`;
 
+    let sendResult;
     try {
-      await sendTrackedSms({ to: phone, body: OPT_IN_BODY, module: 'sms-signup', trigger: 'manual', runId });
+      sendResult = await sendTrackedSms({ to: phone, body: OPT_IN_BODY, module: 'sms-signup', trigger: 'manual', runId });
     } catch (err: any) {
       log(`Opt-in SMS failed for signup: ${err.message}`, 'sms-signup');
+    }
+
+    if (sendResult?.optedOut.has(phone)) {
+      res.status(400).json({ message: 'This number has previously opted out. Reply START to re-subscribe, then try again.' });
+      return;
     }
 
     try {
