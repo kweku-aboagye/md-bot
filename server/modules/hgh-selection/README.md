@@ -34,6 +34,14 @@ Checks whether His Glory Heralds has logged a song for the shared target Sunday 
 - selection reminder HTML is built through the shared responsive reminder template in `server/core/email/reminder-template.ts`
 - manual and scheduled HGH selection runs use the same provider configuration
 - on Railway, that should normally be `Resend`
+- recipients: `HIS_GLORY_HERALDS_EMAILS` (comma-separated) + `ADMIN_EMAIL` always appended
+
+## SMS Delivery
+
+- sent after a successful email delivery
+- group members: phone numbers looked up from the `phone_contacts` DB table by matching each `HIS_GLORY_HERALDS_EMAILS` address
+- admin: `ADMIN_PHONE` env var used directly (no DB lookup required)
+- SMS is silently skipped when Twilio env vars are not configured
 
 ## Manual Testing
 

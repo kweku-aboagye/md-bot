@@ -1,11 +1,11 @@
-import { CELESTIAL_COL_DATE, CELESTIAL_COL_EVENT, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, getCelestialChoirEmails } from '../../core/config/resources';
+import { CELESTIAL_COL_DATE, CELESTIAL_COL_EVENT, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, getAdminEmail, getCelestialChoirEmails } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
 import { getPhonesForEmails } from '../../core/sms/contacts';
-import { sendTrackedSms } from '../../core/sms/texter';
+import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { buildCelestialMissingHymnEmail } from './email';
 import type { CelestialCheckResult, CelestialHymnRecord } from './types';
 
@@ -118,10 +118,14 @@ export async function runCelestialCheck(
 
     if (result.emailSent) {
       try {
-        const phones = await getPhonesForEmails(recipients);
-        if (phones.length > 0) {
+        const adminEmail = getAdminEmail();
+        const groupEmails = recipients.filter(e => e !== adminEmail);
+        const groupPhones = await getPhonesForEmails(groupEmails);
+        const adminPhone = getAdminPhone();
+        const allPhones = [...new Set([...groupPhones, ...(adminPhone ? [adminPhone] : [])])];
+        if (allPhones.length > 0) {
           await sendTrackedSms({
-            to: phones,
+            to: allPhones,
             body: `[MD Bot] Celestial reminder: hymn for Sun ${result.targetSunday} hasn't been logged yet. Check your email for details.`,
             module: 'celestial',
             trigger,

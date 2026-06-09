@@ -1,9 +1,9 @@
-import { getAdminEmail } from '../../core/config/resources';
+import { getAdminEmail, getPraiseAndWorshipEmails } from '../../core/config/resources';
 import type { EmailTrigger } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { formatEmailDate } from '../../core/email/reminder-template';
 import { log } from '../../core/logging/log';
-import { getPhoneForEmail } from '../../core/sms/contacts';
+import { getPhoneForEmail, getPhonesForEmails } from '../../core/sms/contacts';
 import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { buildAdminEmail, buildLeaderEmail } from './email';
 import type { EmailSent, SectionData, SectionStatus, SectionValidation, WeekData } from './types';
@@ -66,6 +66,7 @@ export async function sendValidationEmails(
   }
 ): Promise<EmailSent[]> {
   const adminEmail = getAdminEmail();
+  const pwRecipients = getPraiseAndWorshipEmails();
   const emailsSent: EmailSent[] = [];
   const formattedDate = formatEmailDate(weekData.serviceDate);
 
@@ -73,14 +74,14 @@ export async function sendValidationEmails(
     if (v.status === 'complete') continue;
 
     if (v.status === 'missing_leader') {
-      let adminEmailSent = false;
-      if (!adminEmail) {
-        log(`No ADMIN_EMAIL configured — skipping admin notification for ${v.sectionName}`, 'validator');
+      let missingLeaderEmailSent = false;
+      if (pwRecipients.length === 0) {
+        log(`No recipients configured — skipping missing leader notification for ${v.sectionName}`, 'validator');
       } else try {
         const email = buildAdminEmail(v.sectionName, formattedDate);
         const subject = `Action Needed: Missing Leader for ${v.sectionName} - ${formattedDate}`;
         await sendTrackedEmail({
-          to: adminEmail,
+          to: pwRecipients,
           subject,
           body: email.text,
           html: email.html,
@@ -102,24 +103,29 @@ export async function sendValidationEmails(
             },
           },
         });
-        emailsSent.push({
-          to: adminEmail,
-          type: 'admin_missing_leader',
-          sectionName: v.sectionName,
-          sentAt: new Date().toISOString(),
-        });
-        log(`Admin email sent to ${adminEmail} for missing leader in ${v.sectionName}`, 'validator');
-        adminEmailSent = true;
+        for (const recipient of pwRecipients) {
+          emailsSent.push({
+            to: recipient,
+            type: 'admin_missing_leader',
+            sectionName: v.sectionName,
+            sentAt: new Date().toISOString(),
+          });
+        }
+        log(`Missing leader email sent to ${pwRecipients.join(', ')} for ${v.sectionName}`, 'validator');
+        missingLeaderEmailSent = true;
       } catch (err: any) {
-        log(`Failed to send admin email for ${v.sectionName}: ${err.message}`, 'validator');
+        log(`Failed to send missing leader email for ${v.sectionName}: ${err.message}`, 'validator');
       }
 
-      if (adminEmailSent) {
+      if (missingLeaderEmailSent) {
         try {
+          const groupEmails = pwRecipients.filter(e => e !== adminEmail);
+          const groupPhones = await getPhonesForEmails(groupEmails);
           const adminPhone = getAdminPhone();
-          if (adminPhone) {
+          const allPhones = [...new Set([...groupPhones, ...(adminPhone ? [adminPhone] : [])])];
+          if (allPhones.length > 0) {
             await sendTrackedSms({
-              to: adminPhone,
+              to: allPhones,
               body: `[MD Bot] P&W: ${v.sectionName} is missing a leader for ${formattedDate}. Check your email.`,
               module: 'pw',
               trigger: options.trigger,
@@ -127,7 +133,7 @@ export async function sendValidationEmails(
             });
           }
         } catch (err: any) {
-          log(`Failed to send admin SMS for ${v.sectionName}: ${err.message}`, 'validator');
+          log(`Failed to send missing leader SMS for ${v.sectionName}: ${err.message}`, 'validator');
         }
       }
       continue;

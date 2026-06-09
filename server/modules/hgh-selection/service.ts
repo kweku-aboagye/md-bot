@@ -17,16 +17,19 @@
  * non-empty. A match means the song has already been selected/pre-logged.
  *
  * Requires env vars:
- *   ADMIN_EMAIL             — set in schema.ts constant
+ *   HIS_GLORY_HERALDS_EMAILS — comma-separated list of herald emails
+ *   ADMIN_EMAIL              — always appended to email recipients
+ *   ADMIN_PHONE              — receives SMS directly (E.164 format)
  *   Either RESEND_API_KEY / RESEND_FROM_EMAIL
  *   or GMAIL_USER / GMAIL_APP_PASSWORD
  */
 
-import { getAdminEmail, HGH_COL_DATE, HGH_COL_TITLE, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
+import { getAdminEmail, getHisGloryHeraldsEmails, HGH_COL_DATE, HGH_COL_TITLE, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
+import { getPhonesForEmails } from '../../core/sms/contacts';
 import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { isSheetEntryFilledForDate } from './checker';
 import { buildHghSelectionReminderEmail } from './email';
@@ -53,6 +56,7 @@ export async function checkHGHSelectionAndNotify(
 ): Promise<void> {
   const runId = createRunId();
   const adminEmail = getAdminEmail();
+  const recipients = getHisGloryHeraldsEmails();
   const status = await getHghSelectionStatus();
   log(`Checking HGH song selection for ${status.targetSunday}`, 'hgh-selection');
 
@@ -61,8 +65,8 @@ export async function checkHGHSelectionAndNotify(
     return;
   }
 
-  if (!adminEmail) {
-    log('No ADMIN_EMAIL configured — skipping HGH selection reminder', 'hgh-selection');
+  if (recipients.length === 0) {
+    log('No recipients configured — skipping HGH selection reminder', 'hgh-selection');
     return;
   }
 
@@ -70,7 +74,7 @@ export async function checkHGHSelectionAndNotify(
 
   const email = buildHghSelectionReminderEmail(status.targetSunday);
   await sendTrackedEmail({
-    to: adminEmail,
+    to: recipients,
     subject: `HGH: No song logged for ${status.targetSunday}`,
     body: email.text,
     html: email.html,
@@ -86,16 +90,23 @@ export async function checkHGHSelectionAndNotify(
     },
   });
 
-  log(`HGH selection reminder sent to ${adminEmail}`, 'hgh-selection');
+  log(`HGH selection reminder sent to ${recipients.join(', ')}`, 'hgh-selection');
 
-  const adminPhone = getAdminPhone();
-  if (adminPhone) {
-    await sendTrackedSms({
-      to: adminPhone,
-      body: `[MD Bot] HGH reminder: no song has been logged for Sun ${status.targetSunday} yet. Check your email for details.`,
-      module: 'hgh-selection',
-      trigger,
-      runId,
-    });
+  try {
+    const groupEmails = recipients.filter(e => e !== adminEmail);
+    const groupPhones = await getPhonesForEmails(groupEmails);
+    const adminPhone = getAdminPhone();
+    const allPhones = [...new Set([...groupPhones, ...(adminPhone ? [adminPhone] : [])])];
+    if (allPhones.length > 0) {
+      await sendTrackedSms({
+        to: allPhones,
+        body: `[MD Bot] HGH reminder: no song has been logged for Sun ${status.targetSunday} yet. Check your email for details.`,
+        module: 'hgh-selection',
+        trigger,
+        runId,
+      });
+    }
+  } catch (err: any) {
+    log(`Failed to send HGH selection reminder SMS: ${err.message}`, 'hgh-selection');
   }
 }

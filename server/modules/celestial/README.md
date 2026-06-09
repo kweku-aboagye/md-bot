@@ -36,6 +36,14 @@ Checks whether Celestial Choir has selected a hymn for the shared target Sunday,
 - missing-hymn HTML is built through the shared responsive reminder template in `server/core/email/reminder-template.ts`
 - manual and scheduled Celestial runs use the same provider configuration
 - on Railway, that should normally be `Resend`
+- recipients: `CELESTIAL_CHOIR_EMAILS` (comma-separated) + `ADMIN_EMAIL` always appended
+
+## SMS Delivery
+
+- sent after a successful email delivery
+- group members: phone numbers looked up from the `phone_contacts` DB table by matching each `CELESTIAL_CHOIR_EMAILS` address
+- admin: `ADMIN_PHONE` env var used directly (no DB lookup required)
+- SMS is silently skipped when Twilio env vars are not configured
 
 ## Manual Testing
 
