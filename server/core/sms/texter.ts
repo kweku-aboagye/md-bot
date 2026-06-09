@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
 import { db } from '../db';
-import { smsHistory } from '../db/schema';
+import { smsHistory, smsOptIn } from '../db/schema';
 import { log } from '../logging/log';
 
 export interface SendTrackedSmsArgs {
@@ -59,6 +60,15 @@ export async function sendTrackedSms(args: SendTrackedSmsArgs): Promise<void> {
         status = 'failed';
         error = err.message || String(err);
         log(`SMS failed to ${maskPhone(phone)}: ${error}`, 'texter');
+        // Twilio error 21610 means the recipient opted out — remove from opt-in table
+        if (err.code === 21610) {
+          try {
+            await db.delete(smsOptIn).where(eq(smsOptIn.phone, phone));
+            log(`Removed opted-out number ${maskPhone(phone)} from sms_opt_in`, 'texter');
+          } catch (delErr: any) {
+            log(`Failed to remove opted-out number from sms_opt_in: ${delErr.message}`, 'texter');
+          }
+        }
       }
 
       try {
