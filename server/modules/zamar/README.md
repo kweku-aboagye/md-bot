@@ -31,6 +31,14 @@ Compiles the target Sunday songs from P&W, HGH, and Celestial, exposes that comb
 - prep email HTML is mobile-friendly and rendered in `email.ts`
 - manual and scheduled Zamar runs use the same provider configuration
 - on Railway, that should normally be `Resend`
+- recipients: `ZAMAR_BAND_EMAILS` (comma-separated) + `ADMIN_EMAIL` always appended
+
+## SMS Delivery
+
+- sent after a successful email delivery
+- group members: phone numbers looked up from the `phone_contacts` DB table by matching each `ZAMAR_BAND_EMAILS` address
+- admin: `ADMIN_PHONE` env var used directly (no DB lookup required)
+- SMS is silently skipped when Twilio env vars are not configured
 
 ## Manual Testing
 

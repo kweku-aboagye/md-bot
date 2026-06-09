@@ -46,6 +46,15 @@ Reads the P&W Google Doc for the target Sunday week, validates each required sec
 - reminder HTML is built through the shared responsive reminder template in `server/core/email/reminder-template.ts`
 - manual and scheduled P&W runs use the same provider configuration
 - on Railway, that should normally be `Resend`
+- missing-leader alerts: `PRAISE_AND_WORSHIP_EMAILS` (comma-separated) + `ADMIN_EMAIL` always appended
+- leader reminders (missing songs/links): sent directly to the leader email parsed from the Google Doc
+
+## SMS Delivery
+
+- sent after a successful email delivery
+- missing-leader: group members' phones looked up from `phone_contacts` DB by matching `PRAISE_AND_WORSHIP_EMAILS`; `ADMIN_PHONE` env var used directly for admin
+- leader reminder: leader's phone looked up from `phone_contacts` DB by matching their email from the doc
+- SMS is silently skipped when Twilio env vars are not configured
 
 ## Manual Testing
 

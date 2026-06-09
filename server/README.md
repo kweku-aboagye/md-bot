@@ -40,9 +40,18 @@ Optional:
 - `PORT` default `5001`
 - `EMAIL_PROVIDER` set to `resend` or `gmail`; if omitted, MD Bot auto-detects `resend` first, then Gmail SMTP
 - `DASHBOARD_PIN` protects `/api/test/*`
-- `ADMIN_EMAIL` used by `/api/test/send-email`, P&W missing-leader alerts, HGH reminder/report delivery, and included in Celestial/Zamar notifications
-- `CELESTIAL_NOTIFICATION_EMAILS` comma-separated non-admin recipients for Celestial alerts; `ADMIN_EMAIL` is always included automatically
-- `ZAMAR_BAND_EMAILS` comma-separated non-admin recipients for Zamar prep emails; `ADMIN_EMAIL` is always included automatically
+- `ADMIN_EMAIL` always appended to every group recipient list and used by `/api/test/send-email`
+- `CELESTIAL_CHOIR_EMAILS` comma-separated recipients for Celestial missing-hymn alerts; `ADMIN_EMAIL` is always appended automatically
+- `HIS_GLORY_HERALDS_EMAILS` comma-separated recipients for HGH selection reminders; `ADMIN_EMAIL` is always appended automatically
+- `PRAISE_AND_WORSHIP_EMAILS` comma-separated recipients for P&W missing-leader alerts; `ADMIN_EMAIL` is always appended automatically
+- `ZAMAR_BAND_EMAILS` comma-separated recipients for Zamar prep emails; `ADMIN_EMAIL` is always appended automatically
+
+Required for SMS delivery (all optional — SMS is silently skipped when unset):
+
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_FROM_NUMBER` E.164 format e.g. `+1XXXXXXXXXX`
+- `ADMIN_PHONE` E.164 format; receives SMS directly for all modules without a DB lookup
 
 ## Railway Note
 
@@ -67,10 +76,18 @@ Optional:
    - `GOOGLE_SERVICE_ACCOUNT_JSON`
    - `YOUTUBE_API_KEY`
    - `ADMIN_EMAIL`
+   - `ADMIN_PHONE` (E.164, for SMS)
+   - `CELESTIAL_CHOIR_EMAILS`
+   - `HIS_GLORY_HERALDS_EMAILS`
+   - `PRAISE_AND_WORSHIP_EMAILS`
+   - `ZAMAR_BAND_EMAILS`
    - `DASHBOARD_PIN`
    - `EMAIL_PROVIDER=resend`
    - `RESEND_API_KEY`
    - `RESEND_FROM_EMAIL`
+   - `TWILIO_ACCOUNT_SID`
+   - `TWILIO_AUTH_TOKEN`
+   - `TWILIO_FROM_NUMBER`
 3. Redeploy the service after changing environment variables.
 4. Verify:
    - `GET /health`
