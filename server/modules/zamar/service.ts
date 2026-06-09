@@ -214,7 +214,7 @@ export async function runZamarPrep(
       if (allPhones.length > 0) {
         await sendTrackedSms({
           to: allPhones,
-          body: `[MD Bot] Zamar prep list for Sun ${result.targetSunday} is ready (${result.songs.length} songs). Check your email for details.`,
+          body: `[MD Bot] Zamar Band prep list for Sunday (${result.targetSunday}) is ready — ${result.songs.length} songs. Check your email for more details.`,
           module: 'zamar',
           trigger,
           runId,

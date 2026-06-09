@@ -126,7 +126,7 @@ export async function runCelestialCheck(
         if (allPhones.length > 0) {
           await sendTrackedSms({
             to: allPhones,
-            body: `[MD Bot] Celestial reminder: hymn for Sun ${result.targetSunday} hasn't been logged yet. Check your email for details.`,
+            body: `[MD Bot] Action needed: no hymn has been logged for Celestial Choir this Sunday (${result.targetSunday}). Check your email for more details.`,
             module: 'celestial',
             trigger,
             runId,

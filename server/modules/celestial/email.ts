@@ -12,7 +12,7 @@ export function buildCelestialMissingHymnEmail(result: CelestialCheckResult) {
     title: 'Celestial Choir: Hymn Not Yet Selected',
     metaLine: `For ${formattedDate}`,
     tone: 'warning',
-    highlightTitle: `No hymn has been chosen for ${formattedDate}`,
+    highlightTitle: `No hymn has been logged for Celestial Choir this ${formattedDate}`,
     highlightLines: result.event ? [`Event: ${result.event}`] : [],
     paragraphs: [
       'The Celestial Choir sheet does not show a hymn for the upcoming service.',
