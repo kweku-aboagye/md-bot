@@ -46,7 +46,7 @@ export async function runHghReport(trigger: 'scheduled' | 'manual' = 'manual') {
   if (adminPhone) {
     await sendTrackedSms({
       to: adminPhone,
-      body: `🤖 His Glory Heralds gap report is ready — ${result.unministeredSongs.length} songs remaining. Check your email for more details.`,
+      body: `[MD Bot] His Glory Heralds gap report is ready — ${result.unministeredSongs.length} songs remaining. Check your email for more details.`,
       module: 'hgh-gap',
       trigger,
       runId,

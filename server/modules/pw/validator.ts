@@ -126,7 +126,7 @@ export async function sendValidationEmails(
           if (allPhones.length > 0) {
             await sendTrackedSms({
               to: allPhones,
-              body: `🤖 Action needed: ${v.sectionName} is missing a leader for Sunday (${formattedDate}). Check your email for more details.`,
+              body: `[MD Bot] Action needed: ${v.sectionName} is missing a leader for ${formattedDate}. Check your email for more details.`,
               module: 'pw',
               trigger: options.trigger,
               runId: options.runId,
@@ -185,7 +185,7 @@ export async function sendValidationEmails(
           if (leaderPhone) {
             await sendTrackedSms({
               to: leaderPhone,
-              body: `🤖 Reminder: your ${v.sectionName} setlist for Sunday (${formattedDate}) needs updating. Check your email for more details.`,
+              body: `[MD Bot] Reminder: your ${v.sectionName} setlist for ${formattedDate} needs updating. Check your email for more details.`,
               module: 'pw',
               trigger: options.trigger,
               runId: options.runId,

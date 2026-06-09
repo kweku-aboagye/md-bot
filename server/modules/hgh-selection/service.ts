@@ -100,7 +100,7 @@ export async function checkHGHSelectionAndNotify(
     if (allPhones.length > 0) {
       await sendTrackedSms({
         to: allPhones,
-        body: `🤖 Action needed: no song has been logged for His Glory Heralds this Sunday (${status.targetSunday}). Check your email for more details.`,
+        body: `[MD Bot] Action needed: no song has been logged for His Glory Heralds this Sunday (${status.targetSunday}). Check your email for more details.`,
         module: 'hgh-selection',
         trigger,
         runId,
