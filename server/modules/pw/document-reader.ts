@@ -87,7 +87,14 @@ function parseDateFromHeader(header: string): Date | null {
 }
 
 function looksLikeDateHeader(text: string): boolean {
-  return parseDateFromHeader(text) !== null;
+  const cleaned = text.replace(/\s+/g, ' ').trim();
+  // A real date header is short and is mostly the date itself. Guard against
+  // song titles that merely contain a date-like token (e.g. a recording date
+  // such as "... | 23-01-2024"), which would otherwise be misread as a week
+  // boundary and truncate the section content that follows.
+  if (cleaned.length > 40) return false;
+  if (/youtu\.?be|youtube\.com/i.test(cleaned)) return false;
+  return parseDateFromHeader(cleaned) !== null;
 }
 
 function formatDateString(date: Date): string {
@@ -212,7 +219,7 @@ function parseSectionsFromParagraphs(paragraphs: ParagraphInfo[]): SectionData[]
 
     const cleanedTitle = p.text
       .replace(/(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/playlist\?)[^\s]*/gi, '')
-      .replace(/[-–—•*·]\s*/, '')
+      .replace(/^\s*[-–—•*·]\s*/, '')
       .trim();
 
     if (cleanedTitle.length >= 2 && !isEmailAddress(cleanedTitle)) {

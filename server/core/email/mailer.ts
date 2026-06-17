@@ -163,8 +163,12 @@ export async function sendEmail({
 export async function sendTrackedEmail({
   history,
   ...emailArgs
-}: SendTrackedEmailArgs): Promise<EmailSendResult> {
+}: SendTrackedEmailArgs): Promise<EmailSendResult | null> {
   const recipients = normalizeRecipients(emailArgs.to);
+  if (recipients.length === 0) {
+    log(`Skipping ${history.kind} — no recipients configured`, 'mailer');
+    return null;
+  }
   const info = await sendEmail(emailArgs);
   const sentAt = new Date().toISOString();
   const messageId = info.messageId;
