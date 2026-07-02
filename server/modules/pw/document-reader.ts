@@ -50,15 +50,18 @@ function isEmailAddress(text: string): boolean {
 
 // ── Date parsing ──────────────────────────────────────────────────────────────
 
-function parseDateFromHeader(header: string): Date | null {
-  const cleaned = header.replace(/\s+/g, ' ').trim();
+const MONTH_NAMES = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december',
+];
 
-  const monthNames = [
-    'january', 'february', 'march', 'april', 'may', 'june',
-    'july', 'august', 'september', 'october', 'november', 'december',
-  ];
+interface DateMatch {
+  date: Date;
+  raw: string;
+}
 
-  const monthPattern = monthNames.join('|');
+function findDateMatch(cleaned: string): DateMatch | null {
+  const monthPattern = MONTH_NAMES.join('|');
   const dateRegex = new RegExp(
     `(${monthPattern})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:[,\\s]+(\\d{4}))?`,
     'i'
@@ -66,11 +69,11 @@ function parseDateFromHeader(header: string): Date | null {
   const match = cleaned.match(dateRegex);
 
   if (match) {
-    const monthIndex = monthNames.indexOf(match[1].toLowerCase());
+    const monthIndex = MONTH_NAMES.indexOf(match[1].toLowerCase());
     const day = parseInt(match[2], 10);
     const year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
     const date = new Date(year, monthIndex, day);
-    if (!isNaN(date.getTime())) return date;
+    if (!isNaN(date.getTime())) return { date, raw: match[0] };
   }
 
   const slashMatch = cleaned.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
@@ -80,21 +83,43 @@ function parseDateFromHeader(header: string): Date | null {
     let year = parseInt(slashMatch[3], 10);
     if (year < 100) year += 2000;
     const date = new Date(year, month, day);
-    if (!isNaN(date.getTime())) return date;
+    if (!isNaN(date.getTime())) return { date, raw: slashMatch[0] };
   }
 
   return null;
 }
 
+function parseDateFromHeader(header: string): Date | null {
+  const cleaned = header.replace(/\s+/g, ' ').trim();
+  return findDateMatch(cleaned)?.date ?? null;
+}
+
+const HEADER_RESIDUAL_WORDS = new Set([
+  'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
+  'sun', 'mon', 'tue', 'tues', 'wed', 'thu', 'thur', 'thurs', 'fri', 'sat',
+  'service', 'week',
+]);
+
 function looksLikeDateHeader(text: string): boolean {
   const cleaned = text.replace(/\s+/g, ' ').trim();
-  // A real date header is short and is mostly the date itself. Guard against
-  // song titles that merely contain a date-like token (e.g. a recording date
-  // such as "... | 23-01-2024"), which would otherwise be misread as a week
-  // boundary and truncate the section content that follows.
   if (cleaned.length > 40) return false;
   if (/youtu\.?be|youtube\.com/i.test(cleaned)) return false;
-  return parseDateFromHeader(cleaned) !== null;
+
+  const match = findDateMatch(cleaned);
+  if (!match) return false;
+
+  // A real date header is essentially just the date itself (optionally with a
+  // weekday label like "Sunday, August 2, 2026"). Guard against song entries
+  // that merely reference a date in passing (e.g. a repeat-song annotation
+  // like "Shout to the Lord - From 02/08/2026"), which would otherwise be
+  // misread as a week boundary and truncate the section content that follows.
+  const residual = cleaned
+    .replace(match.raw, '')
+    .replace(/[\s\-–—:,.|]+/g, ' ')
+    .trim()
+    .toLowerCase();
+  if (residual === '') return true;
+  return residual.split(' ').every((word) => HEADER_RESIDUAL_WORDS.has(word));
 }
 
 function formatDateString(date: Date): string {
