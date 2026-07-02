@@ -24,16 +24,9 @@ const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets.readonly',
 ];
 
-/**
- * Returns a GoogleAuth instance using the service account credentials
- * stored in GOOGLE_SERVICE_ACCOUNT_JSON.
- *
- * Called fresh each time — GoogleAuth caches the token internally
- * and handles renewal automatically. No manual token management needed.
- */
-export function getGoogleAuth(): ReturnType<typeof google.auth.fromJSON> extends never
-  ? never
-  : InstanceType<typeof google.auth.GoogleAuth> {
+type GoogleAuthInstance = InstanceType<typeof google.auth.GoogleAuth>;
+
+function buildGoogleAuth(): GoogleAuthInstance {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!raw) {
     throw new Error(
@@ -52,20 +45,68 @@ export function getGoogleAuth(): ReturnType<typeof google.auth.fromJSON> extends
     );
   }
 
-  return new google.auth.GoogleAuth({
-    credentials,
-    scopes: SCOPES,
-  }) as any;
+  return new google.auth.GoogleAuth({ credentials, scopes: SCOPES });
+}
+
+let cachedAuth: GoogleAuthInstance | null = null;
+
+/**
+ * Returns a GoogleAuth instance using the service account credentials
+ * stored in GOOGLE_SERVICE_ACCOUNT_JSON.
+ *
+ * Reused for the lifetime of the process. GoogleAuth caches its OAuth
+ * access token internally and renews it automatically, but only within a
+ * single instance — building a fresh instance per call would throw that
+ * cache away every time, forcing every Docs/Sheets request to run its own
+ * full OAuth token exchange instead of sharing one.
+ */
+export function getGoogleAuth(): GoogleAuthInstance {
+  if (!cachedAuth) cachedAuth = buildGoogleAuth();
+  return cachedAuth;
+}
+
+const TOKEN_FETCH_RETRIES = 3;
+const TOKEN_FETCH_RETRY_BASE_MS = 300;
+
+let authReadyPromise: Promise<void> | null = null;
+
+// Ensures the shared auth instance has an active client/token before it's
+// handed to a Docs/Sheets client, retrying transient failures (e.g. a
+// dropped connection to the OAuth token endpoint) with backoff. Concurrent
+// callers share the same in-flight promise so a burst of requests right
+// after a cold start triggers one token exchange, not one per request.
+async function ensureAuthReady(auth: GoogleAuthInstance): Promise<void> {
+  if (!authReadyPromise) {
+    authReadyPromise = (async () => {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          await auth.getClient();
+          return;
+        } catch (err) {
+          if (attempt >= TOKEN_FETCH_RETRIES) {
+            authReadyPromise = null;
+            throw err;
+          }
+          await new Promise((resolve) =>
+            setTimeout(resolve, TOKEN_FETCH_RETRY_BASE_MS * 2 ** attempt)
+          );
+        }
+      }
+    })();
+  }
+  return authReadyPromise;
 }
 
 /** Google Docs client (v1) */
 export async function getDocsClient() {
   const auth = getGoogleAuth();
+  await ensureAuthReady(auth);
   return google.docs({ version: 'v1', auth: auth as any });
 }
 
 /** Google Sheets client (v4) */
 export async function getSheetsClient() {
   const auth = getGoogleAuth();
+  await ensureAuthReady(auth);
   return google.sheets({ version: 'v4', auth: auth as any });
 }
