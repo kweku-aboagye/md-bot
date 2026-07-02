@@ -102,7 +102,6 @@ const HEADER_RESIDUAL_WORDS = new Set([
 
 function looksLikeDateHeader(text: string): boolean {
   const cleaned = text.replace(/\s+/g, ' ').trim();
-  if (cleaned.length > 40) return false;
   if (/youtu\.?be|youtube\.com/i.test(cleaned)) return false;
 
   const match = findDateMatch(cleaned);
