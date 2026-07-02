@@ -70,17 +70,24 @@ const TOKEN_FETCH_RETRY_BASE_MS = 300;
 
 let authReadyPromise: Promise<void> | null = null;
 
-// Ensures the shared auth instance has an active client/token before it's
+// Ensures the shared auth instance holds a live access token before it's
 // handed to a Docs/Sheets client, retrying transient failures (e.g. a
 // dropped connection to the OAuth token endpoint) with backoff. Concurrent
 // callers share the same in-flight promise so a burst of requests right
 // after a cold start triggers one token exchange, not one per request.
+//
+// auth.getClient() only constructs the underlying JWT client — it does not
+// itself call the token endpoint. The actual network round trip happens the
+// first time a request needs an access token, so we force and cache that
+// here (via getAccessToken()) rather than letting each concurrent caller's
+// own Docs/Sheets request race to fetch it independently and unretried.
 async function ensureAuthReady(auth: GoogleAuthInstance): Promise<void> {
   if (!authReadyPromise) {
     authReadyPromise = (async () => {
       for (let attempt = 0; ; attempt++) {
         try {
-          await auth.getClient();
+          const client = await auth.getClient();
+          await client.getAccessToken();
           return;
         } catch (err) {
           if (attempt >= TOKEN_FETCH_RETRIES) {
