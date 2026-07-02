@@ -97,7 +97,7 @@ function parseDateFromHeader(header: string): Date | null {
 const HEADER_RESIDUAL_WORDS = new Set([
   'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
   'sun', 'mon', 'tue', 'tues', 'wed', 'thu', 'thur', 'thurs', 'fri', 'sat',
-  'service', 'week',
+  'service', 'week', 'of',
 ]);
 
 function looksLikeDateHeader(text: string): boolean {
