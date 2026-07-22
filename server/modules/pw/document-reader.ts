@@ -127,9 +127,13 @@ function looksLikeDateHeader(text: string): boolean {
   // that merely reference a date in passing (e.g. a repeat-song annotation
   // like "Shout to the Lord - From 02/08/2026"), which would otherwise be
   // misread as a week boundary and truncate the section content that follows.
+  //
+  // Some leaders hand-type "#" / "**" around the weekday and date pill for
+  // visual emphasis (Markdown-style, though Docs doesn't render it as such),
+  // so those need to be treated as noise the same way whitespace/punctuation is.
   const residual = cleaned
     .replace(match.raw, '')
-    .replace(/[\s\-–—:,.|]+/g, ' ')
+    .replace(/[\s\-–—:,.|#*]+/g, ' ')
     .trim()
     .toLowerCase();
   if (residual === '') return true;
