@@ -55,21 +55,36 @@ const MONTH_NAMES = [
   'july', 'august', 'september', 'october', 'november', 'december',
 ];
 
+// Google Docs date smart chips (e.g. inserted via @date) render as abbreviated
+// month names like "Jul 26, 2026" rather than the spelled-out form, so both
+// need to be recognised.
+const MONTH_ABBREVIATIONS: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11,
+};
+
+function monthIndexFromName(name: string): number {
+  const lower = name.toLowerCase();
+  const fullIndex = MONTH_NAMES.indexOf(lower);
+  if (fullIndex !== -1) return fullIndex;
+  return lower in MONTH_ABBREVIATIONS ? MONTH_ABBREVIATIONS[lower] : -1;
+}
+
 interface DateMatch {
   date: Date;
   raw: string;
 }
 
 function findDateMatch(cleaned: string): DateMatch | null {
-  const monthPattern = MONTH_NAMES.join('|');
+  const monthPattern = [...MONTH_NAMES, ...Object.keys(MONTH_ABBREVIATIONS)].join('|');
   const dateRegex = new RegExp(
-    `(${monthPattern})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:[,\\s]+(\\d{4}))?`,
+    `(${monthPattern})\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:[,\\s]+(\\d{4}))?`,
     'i'
   );
   const match = cleaned.match(dateRegex);
 
   if (match) {
-    const monthIndex = MONTH_NAMES.indexOf(match[1].toLowerCase());
+    const monthIndex = monthIndexFromName(match[1]);
     const day = parseInt(match[2], 10);
     const year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
     const date = new Date(year, monthIndex, day);
