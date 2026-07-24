@@ -200,6 +200,13 @@ function extractParagraphs(content: any[]): ParagraphInfo[] {
         fullText += props.name || props.email || '';
       }
 
+      // Date smart chips (inserted via @date) are their own element type, not
+      // a textRun — without this, chip-only date headers like "Sunday <chip>"
+      // lose the date entirely and never get recognised as a week boundary.
+      if (el.dateElement?.dateElementProperties) {
+        fullText += el.dateElement.dateElementProperties.displayText || '';
+      }
+
       if (el.richLink?.richLinkProperties) {
         const rlProps = el.richLink.richLinkProperties;
         const uri = rlProps.uri || '';
