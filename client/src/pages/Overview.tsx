@@ -185,28 +185,17 @@ function DateLabel({ date, accent, note }: { date: string; accent: string; note?
 // shows up here.
 type SelectionService = { date: string; selected: boolean; title?: string | null; note?: string | null };
 
-function SelectionBody({ services, accent, selectedText, missingText, pendingText }: {
+function SelectionBody({ services, accent, selectedText, missingText }: {
   services: SelectionService[];
   accent: string;
-  selectedText: string;   // single card, e.g. "Hymn selected"
-  missingText: string;    // single card, e.g. "No hymn selected"
-  pendingText: string;    // per-date when not yet picked, e.g. "No hymn selected yet"
+  selectedText: string;   // e.g. "Hymn selected"
+  missingText: string;    // e.g. "No hymn selected"
 }) {
-  if (services.length === 1) {
-    const svc = services[0];
-    return (
-      <div
-        className="status-card status-card--highlight"
-        style={{ '--status-color': svc.selected ? T.green : T.amber } as CSSProperties}
-      >
-        <div className="status-card__title" style={{ color: svc.selected ? T.green : T.amber }}>
-          <StatusDot ok={svc.selected} />
-          {svc.selected ? `${selectedText} ✓` : missingText}
-        </div>
-        {svc.selected && svc.title && <div className="status-card__meta">{svc.title}</div>}
-      </div>
-    );
-  }
+  // Every service renders the same card: a "…selected ✓" / "No … selected"
+  // status line with the picked song underneath. A dated sub-header is added on
+  // top only when the week has more than one service, so single-service weeks
+  // look exactly as before and Celestial and Heralds stay identical.
+  const multi = services.length > 1;
 
   return (
     <>
@@ -216,11 +205,12 @@ function SelectionBody({ services, accent, selectedText, missingText, pendingTex
           className="status-card status-card--highlight"
           style={{ '--status-color': svc.selected ? T.green : T.amber } as CSSProperties}
         >
-          <DateLabel date={svc.date} accent={accent} note={svc.note} />
+          {multi && <DateLabel date={svc.date} accent={accent} note={svc.note} />}
           <div className="status-card__title" style={{ color: svc.selected ? T.green : T.amber }}>
             <StatusDot ok={svc.selected} />
-            {svc.selected ? (svc.title ?? `${selectedText} ✓`) : pendingText}
+            {svc.selected ? `${selectedText} ✓` : missingText}
           </div>
+          {svc.selected && svc.title && <div className="status-card__meta">{svc.title}</div>}
         </div>
       ))}
     </>
@@ -253,7 +243,6 @@ function CelestialPanel({ targetSunday }: { targetSunday: string }) {
           accent={T.purple}
           selectedText="Hymn selected"
           missingText="No hymn selected"
-          pendingText="No hymn selected yet"
         />
       )}
       {data && services.length === 0 && (
@@ -295,7 +284,6 @@ function HGHSelectionPanel({ targetSunday }: { targetSunday: string }) {
           accent={T.amber}
           selectedText="Song selected"
           missingText="No song selected"
-          pendingText="No song selected yet"
         />
       )}
       {data && services.length === 0 && (
