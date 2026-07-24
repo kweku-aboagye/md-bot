@@ -209,17 +209,21 @@ function SelectionBody({ services, accent, selectedText, missingText, pendingTex
   }
 
   return (
-    <div className="stack-16">
+    <>
       {services.map(svc => (
-        <div key={svc.date}>
+        <div
+          key={svc.date}
+          className="status-card status-card--highlight"
+          style={{ '--status-color': svc.selected ? T.green : T.amber } as CSSProperties}
+        >
           <DateLabel date={svc.date} accent={accent} note={svc.note} />
-          <div style={{ display: "flex", alignItems: "center", fontSize: 13, fontWeight: 600, color: svc.selected ? T.green : T.amber }}>
+          <div className="status-card__title" style={{ color: svc.selected ? T.green : T.amber }}>
             <StatusDot ok={svc.selected} />
             {svc.selected ? (svc.title ?? `${selectedText} ✓`) : pendingText}
           </div>
         </div>
       ))}
-    </div>
+    </>
   );
 }
 
