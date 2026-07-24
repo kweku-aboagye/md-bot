@@ -96,24 +96,39 @@ export async function getCelestialWeekStatus(
   const { start, end } = getWeekWindow(targetSunday);
   const hymns = await fetchCelestialHymns();
 
-  const inWindow = hymns
-    .filter((h) => h.date >= start && h.date <= end)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  // One row per date the choir has in the week; the Sunday (the main service
+  // and the reminder target) is always shown even when the sheet has no row for
+  // it yet. Extra mid-week dates only appear when the choir has an entry.
+  const byDate = new Map<string, CelestialWeekStatus['services'][number]>();
+  for (const h of hymns) {
+    if (h.date < start || h.date > end) continue;
+    byDate.set(h.date, {
+      date: h.date,
+      event: h.event,
+      hymnSelected: !!h.songLink,
+      songLink: h.songLink,
+      title: hymnTitle(h.songLink),
+    });
+  }
+  if (!byDate.has(targetISO)) {
+    byDate.set(targetISO, { date: targetISO, event: null, hymnSelected: false, songLink: null, title: null });
+  }
 
-  const services = inWindow.length > 0
-    ? inWindow.map((h) => ({
-        date: h.date,
-        event: h.event,
-        hymnSelected: !!h.songLink,
-        songLink: h.songLink,
-      }))
-    : [{ date: targetISO, event: null, hymnSelected: false, songLink: null }];
+  const services = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 
   return {
     targetSunday: targetISO,
     services,
     hymnSelected: services.every((s) => s.hymnSelected),
   };
+}
+
+// The Celestial song cell usually holds the hymn name (with a hyperlink behind
+// it), which reads FORMATTED as the title. When the cell is a bare URL instead,
+// there's no clean name to show, so fall back to null.
+function hymnTitle(songLink: string | null): string | null {
+  if (!songLink) return null;
+  return /^https?:\/\//i.test(songLink) ? null : songLink;
 }
 
 export async function runCelestialCheck(

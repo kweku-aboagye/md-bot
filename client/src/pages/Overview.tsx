@@ -16,10 +16,10 @@ interface PwSection {
 interface PwService { serviceDate: string; rawHeader?: string | null; sections: PwSection[] }
 interface PwStatus  { targetSunday: string; services: PwService[] }
 
-interface CelestialServiceStatus { date: string; event?: string | null; hymnSelected: boolean; songLink?: string | null }
+interface CelestialServiceStatus { date: string; event?: string | null; hymnSelected: boolean; songLink?: string | null; title?: string | null }
 interface CelestialStatus { targetSunday: string; services: CelestialServiceStatus[]; hymnSelected: boolean }
 
-interface HghServiceStatus { date: string; songSelected: boolean }
+interface HghServiceStatus { date: string; songSelected: boolean; title?: string | null }
 interface HghSelectionStatus { targetSunday: string; services: HghServiceStatus[]; songSelected: boolean }
 
 interface GapSong { title: string; url?: string | null }
@@ -99,10 +99,36 @@ function PWPanel({ targetSunday }: { targetSunday: string }) {
     : data
       ? sections.length > 0
         ? multiService
-          ? `${services.length} services · ${complete}/${sections.length} sections ready`
-          : `${complete}/${sections.length} sections ready`
+          ? `${services.length} services this week`
+          : `Worship set for ${formatServiceDate(services[0].serviceDate)}`
         : 'No service data found'
       : 'Loading…';
+
+  const renderSection = (svc: PwService, sec: PwSection) => {
+    const st = sectionStatus(sec);
+    const s = statusMap[st];
+    const missingLinks = sec.songs.filter(song => !song.youtubeUrl).map(song => song.title);
+    return (
+      <div key={`${svc.serviceDate}-${sec.name}`} className="status-card">
+        <div className="status-card__row">
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="status-card__title">{sec.name}</div>
+            <div className="status-card__meta">
+              {sec.leaderEmail
+                ? <><StatusDot ok={true} />{sec.leaderEmail}</>
+                : <><StatusDot ok={false} /><span style={{ color: T.red }}>No leader</span></>}
+            </div>
+          </div>
+          <Badge color={s.color} bg={s.bg} label={s.label} />
+        </div>
+        {missingLinks.length > 0 && (
+          <div className="status-card__note" style={{ color: T.amber }}>
+            Missing links: {missingLinks.join(", ")}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Card>
@@ -118,46 +144,22 @@ function PWPanel({ targetSunday }: { targetSunday: string }) {
         </div>
       )}
       {data && sections.length > 0 && (
-        <div className="stack-16">
-          {services.map(svc => {
-            const svcComplete = svc.sections.filter(s => sectionStatus(s) === 'complete').length;
-            return (
+        multiService ? (
+          <div className="stack-16">
+            {services.map(svc => (
               <div key={svc.serviceDate}>
-                <div className="subsection-label" style={{ color: T.indigo, display: "flex", justifyContent: "space-between", gap: 10 }}>
-                  <span>{formatServiceDateShort(svc.serviceDate)}</span>
-                  <span style={{ color: T.muted }}>{svcComplete}/{svc.sections.length} ready</span>
-                </div>
+                <DateLabel date={svc.serviceDate} accent={T.indigo} />
                 <div className="status-list">
-                  {svc.sections.map(sec => {
-                    const st = sectionStatus(sec);
-                    const s = statusMap[st];
-                    const missingLinks = sec.songs.filter(song => !song.youtubeUrl).map(song => song.title);
-                    return (
-                      <div key={`${svc.serviceDate}-${sec.name}`} className="status-card">
-                        <div className="status-card__row">
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div className="status-card__title">{sec.name}</div>
-                            <div className="status-card__meta">
-                              {sec.leaderEmail
-                                ? <><StatusDot ok={true} />{sec.leaderEmail}</>
-                                : <><StatusDot ok={false} /><span style={{ color: T.red }}>No leader</span></>}
-                            </div>
-                          </div>
-                          <Badge color={s.color} bg={s.bg} label={s.label} />
-                        </div>
-                        {missingLinks.length > 0 && (
-                          <div className="status-card__note" style={{ color: T.amber }}>
-                            Missing links: {missingLinks.join(", ")}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {svc.sections.map(sec => renderSection(svc, sec))}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="status-list">
+            {services[0].sections.map(sec => renderSection(services[0], sec))}
+          </div>
+        )
       )}
       <div className="action-row">
         <SheetLink href={LINKS.pw} label="Open P&W Doc" />
@@ -167,33 +169,57 @@ function PWPanel({ targetSunday }: { targetSunday: string }) {
   );
 }
 
-// ── Shared: per-service selection list ────────────────────────────────────────
-// Renders one highlight card per service in the week, each labelled with its
-// own date so multi-service weeks (e.g. a Friday half-night + Sunday) read
-// clearly instead of collapsing into a single undated status.
-function SelectionStatusList({ services, selectedText, missingText }: {
-  services: Array<{ date: string; selected: boolean; detail?: string | null }>;
-  selectedText: string;
-  missingText: string;
-}) {
+// ── Shared: compact dated sub-header (e.g. "FRI, AUG 1 · Half Night") ──────────
+function DateLabel({ date, accent, note }: { date: string; accent: string; note?: string | null }) {
   return (
-    <>
+    <div className="subsection-label" style={{ color: accent }}>
+      {formatServiceDateShort(date)}{note ? ` · ${note}` : ''}
+    </div>
+  );
+}
+
+// ── Shared: selection panel body (Celestial / Heralds) ────────────────────────
+// One service = the familiar single highlight card. More than one = a dated
+// block per service (only the dates this group actually has), listing the
+// picked song under each, so a mid-week service a group isn't part of never
+// shows up here.
+type SelectionService = { date: string; selected: boolean; title?: string | null; note?: string | null };
+
+function SelectionBody({ services, accent, selectedText, missingText, pendingText }: {
+  services: SelectionService[];
+  accent: string;
+  selectedText: string;   // single card, e.g. "Hymn selected"
+  missingText: string;    // single card, e.g. "No hymn selected"
+  pendingText: string;    // per-date when not yet picked, e.g. "No hymn selected yet"
+}) {
+  if (services.length === 1) {
+    const svc = services[0];
+    return (
+      <div
+        className="status-card status-card--highlight"
+        style={{ '--status-color': svc.selected ? T.green : T.amber } as CSSProperties}
+      >
+        <div className="status-card__title" style={{ color: svc.selected ? T.green : T.amber }}>
+          <StatusDot ok={svc.selected} />
+          {svc.selected ? `${selectedText} ✓` : missingText}
+        </div>
+        {svc.selected && svc.title && <div className="status-card__meta">{svc.title}</div>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="stack-16">
       {services.map(svc => (
-        <div
-          key={svc.date}
-          className="status-card status-card--highlight"
-          style={{ '--status-color': svc.selected ? T.green : T.amber } as CSSProperties}
-        >
-          <div className="status-card__title" style={{ color: svc.selected ? T.green : T.amber }}>
+        <div key={svc.date}>
+          <DateLabel date={svc.date} accent={accent} note={svc.note} />
+          <div style={{ display: "flex", alignItems: "center", fontSize: 13, fontWeight: 600, color: svc.selected ? T.green : T.amber }}>
             <StatusDot ok={svc.selected} />
-            {svc.selected ? `${selectedText} ✓` : missingText}
-          </div>
-          <div className="status-card__meta">
-            {formatServiceDate(svc.date)}{svc.detail ? ` · ${svc.detail}` : ''}
+            {svc.selected ? (svc.title ?? `${selectedText} ✓`) : pendingText}
           </div>
         </div>
       ))}
-    </>
+    </div>
   );
 }
 
@@ -201,16 +227,15 @@ function SelectionStatusList({ services, selectedText, missingText }: {
 function CelestialPanel({ targetSunday }: { targetSunday: string }) {
   const { data, loading, error, reload } = useFetch<CelestialStatus>('/api/celestial/status');
   const services = data?.services ?? [];
-  const selectedCount = services.filter(s => s.hymnSelected).length;
   const multi = services.length > 1;
   const subtitle = loading
     ? 'Loading…'
     : data
       ? multi
-        ? `${selectedCount}/${services.length} services have a hymn`
+        ? `${services.length} services this week`
         : data.hymnSelected
-          ? `Hymn selected for ${formatServiceDate(targetSunday)}`
-          : `No hymn selected for ${formatServiceDate(targetSunday)}`
+          ? `Hymn selected for ${formatServiceDate(services[0]?.date ?? targetSunday)}`
+          : `No hymn selected for ${formatServiceDate(services[0]?.date ?? targetSunday)}`
       : 'Loading…';
 
   return (
@@ -219,10 +244,12 @@ function CelestialPanel({ targetSunday }: { targetSunday: string }) {
       {loading && <LoadingState />}
       {error && <ErrorState message={error} onRetry={reload} />}
       {data && services.length > 0 && (
-        <SelectionStatusList
-          services={services.map(s => ({ date: s.date, selected: s.hymnSelected, detail: s.event ?? null }))}
+        <SelectionBody
+          services={services.map(s => ({ date: s.date, selected: s.hymnSelected, title: s.title ?? null, note: s.event ?? null }))}
+          accent={T.purple}
           selectedText="Hymn selected"
           missingText="No hymn selected"
+          pendingText="No hymn selected yet"
         />
       )}
       {data && services.length === 0 && (
@@ -242,16 +269,15 @@ function CelestialPanel({ targetSunday }: { targetSunday: string }) {
 function HGHSelectionPanel({ targetSunday }: { targetSunday: string }) {
   const { data, loading, error, reload } = useFetch<HghSelectionStatus>('/api/hgh-selection/status');
   const services = data?.services ?? [];
-  const selectedCount = services.filter(s => s.songSelected).length;
   const multi = services.length > 1;
   const subtitle = loading
     ? 'Loading…'
     : data
       ? multi
-        ? `${selectedCount}/${services.length} services have a song`
+        ? `${services.length} services this week`
         : data.songSelected
-          ? `Song selected for ${formatServiceDate(targetSunday)}`
-          : `No song selected for ${formatServiceDate(targetSunday)}`
+          ? `Song selected for ${formatServiceDate(services[0]?.date ?? targetSunday)}`
+          : `No song selected for ${formatServiceDate(services[0]?.date ?? targetSunday)}`
       : 'Loading…';
 
   return (
@@ -260,10 +286,12 @@ function HGHSelectionPanel({ targetSunday }: { targetSunday: string }) {
       {loading && <LoadingState />}
       {error && <ErrorState message={error} onRetry={reload} />}
       {data && services.length > 0 && (
-        <SelectionStatusList
-          services={services.map(s => ({ date: s.date, selected: s.songSelected }))}
+        <SelectionBody
+          services={services.map(s => ({ date: s.date, selected: s.songSelected, title: s.title ?? null }))}
+          accent={T.amber}
           selectedText="Song selected"
           missingText="No song selected"
+          pendingText="No song selected yet"
         />
       )}
       {data && services.length === 0 && (
@@ -339,9 +367,7 @@ function ZamarPanel() {
             ) : multiDate ? (
               dates.map(date => (
                 <div key={date} style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, margin: "6px 0 2px" }}>
-                    {formatServiceDateShort(date)}
-                  </div>
+                  <DateLabel date={date} accent={color} />
                   {songs.filter(s => s.serviceDate === date).map((song, i) => (
                     <ZamarSongRow key={`${date}-${i}`} song={song} index={i + 1} />
                   ))}

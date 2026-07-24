@@ -51,12 +51,14 @@ export interface DatedEntry {
   date: string;
   /** True when the song column for this row is non-empty. */
   filled: boolean;
+  /** The song column's text for this row (empty string when blank). */
+  title: string;
 }
 
 /**
  * Returns every row in the sheet that has a parseable date, paired with whether
- * its song column is filled. Reads the tab once so callers can pull out a whole
- * week's worth of dates without a request per date.
+ * its song column is filled and the song text itself. Reads the tab once so
+ * callers can pull out a whole week's worth of dates without a request per date.
  */
 export async function getDatedEntries(config: SheetConfig): Promise<DatedEntry[]> {
   const rows = await getSheetRows(config.sheetId, config.tabName);
@@ -69,8 +71,8 @@ export async function getDatedEntries(config: SheetConfig): Promise<DatedEntry[]
     const cellISO = parseCellDateToISO(rawDate);
     if (!cellISO) continue;
 
-    const song = row[config.songColumn]?.trim();
-    entries.push({ date: cellISO, filled: !!song && song.length > 0 });
+    const song = row[config.songColumn]?.trim() ?? '';
+    entries.push({ date: cellISO, filled: song.length > 0, title: song });
   }
 
   return entries;

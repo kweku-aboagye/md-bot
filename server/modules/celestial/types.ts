@@ -18,6 +18,8 @@ export interface CelestialServiceStatus {
   event: string | null;
   hymnSelected: boolean;
   songLink: string | null;
+  /** The hymn name to display, when the cell holds a title rather than a bare URL. */
+  title: string | null;
 }
 
 export interface CelestialWeekStatus {

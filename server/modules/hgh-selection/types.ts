@@ -6,6 +6,8 @@ export interface HghSelectionStatus {
 export interface HghServiceStatus {
   date: string;
   songSelected: boolean;
+  /** The selected song's title, when one has been logged. */
+  title: string | null;
 }
 
 export interface HghSelectionWeekStatus {

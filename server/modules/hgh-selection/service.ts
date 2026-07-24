@@ -66,13 +66,20 @@ export async function getHghSelectionWeekStatus(
   const { start, end } = getWeekWindow(targetSunday);
   const entries = await getDatedEntries(HGH_SELECTION_CONFIG);
 
-  const inWindow = entries
-    .filter((e) => e.date >= start && e.date <= end)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  // One row per date the group has in the week; the Sunday (the main service
+  // every group is part of, and the reminder target) is always shown even when
+  // the sheet has no row for it yet. Extra mid-week dates only appear when the
+  // group actually has an entry for them.
+  const byDate = new Map<string, HghSelectionWeekStatus['services'][number]>();
+  for (const e of entries) {
+    if (e.date < start || e.date > end) continue;
+    byDate.set(e.date, { date: e.date, songSelected: e.filled, title: e.filled ? e.title : null });
+  }
+  if (!byDate.has(targetISO)) {
+    byDate.set(targetISO, { date: targetISO, songSelected: false, title: null });
+  }
 
-  const services = inWindow.length > 0
-    ? inWindow.map((e) => ({ date: e.date, songSelected: e.filled }))
-    : [{ date: targetISO, songSelected: false }];
+  const services = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 
   return {
     targetSunday: targetISO,
