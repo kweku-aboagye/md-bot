@@ -32,7 +32,7 @@ interface HghStatus {
 
 // Fix: server returns `youtubeUrl`, not `url`
 interface ZamarSong { title: string; youtubeUrl?: string | null; group: string; section?: string | null; serviceDate?: string | null }
-interface ZamarStatus { songs: ZamarSong[]; emailSent: boolean }
+interface ZamarStatus { songs: ZamarSong[]; emailSent: boolean; targetSunday: string }
 
 // ── useFetch ──────────────────────────────────────────────────────────────────
 // Auto-retries up to 8 times with exponential backoff when the server isn't
@@ -330,47 +330,66 @@ function ZamarPanel() {
     "Celestial": { color: T.purple, label: "Celestial Choir" },
   };
 
+  const songs = data?.songs ?? [];
+  // The services in the week: every date a song belongs to, plus the target
+  // Sunday (always the main service). More than one → group by service.
+  const dates = [...new Set([
+    ...songs.map(s => s.serviceDate).filter((d): d is string => !!d),
+    ...(data ? [data.targetSunday] : []),
+  ])].sort();
+  const multiService = dates.length > 1;
+
+  // Renders a team's songs. `showEmpty` prints the "Nothing submitted yet"
+  // placeholder — used for every team on a single-service week and for the
+  // Sunday (where all teams are expected), but not for mid-week services a team
+  // simply isn't part of.
+  const teamBlock = (group: typeof groups[number], subset: ZamarSong[], showEmpty: boolean) => {
+    if (subset.length === 0 && !showEmpty) return null;
+    const { color, label } = groupMeta[group];
+    return (
+      <div key={group} style={{ marginBottom: 12 }}>
+        <div className="subsection-label" style={{ color }}>{label}</div>
+        {subset.length === 0
+          ? <div style={{ fontSize: 12, color: T.muted, fontStyle: "italic" }}>Nothing submitted yet</div>
+          : subset.map((song, i) => <ZamarSongRow key={i} song={song} index={i + 1} />)}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <SectionHeader
         accent={T.teal} icon="🎹" title="Zamar Band"
-        subtitle="Compiles the worship set for band prep"
+        subtitle={data && multiService ? `${dates.length} services this week` : "Compiles the worship set for band prep"}
       />
       {loading && <LoadingState />}
       {error && <ErrorState message={error} onRetry={reload} />}
-      {data && groups.map(group => {
-        const songs = data.songs.filter(s => s.group === group);
-        const { color, label } = groupMeta[group];
 
-        // P&W songs can span several services in the week — sub-group them by
-        // date so the band can tell which set belongs to which service.
-        const dates = group === 'P&W'
-          ? [...new Set(songs.map(s => s.serviceDate).filter((d): d is string => !!d))].sort()
-          : [];
-        const multiDate = dates.length > 1;
+      {data && !multiService && groups.map(group =>
+        teamBlock(group, songs.filter(s => s.group === group), true)
+      )}
 
-        return (
-          <div key={group} style={{ marginBottom: 14 }}>
-            <div className="subsection-label" style={{ color }}>
-              {label}
-            </div>
-            {songs.length === 0 ? (
-              <div style={{ fontSize: 12, color: T.muted, fontStyle: "italic" }}>Nothing submitted yet</div>
-            ) : multiDate ? (
-              dates.map(date => (
-                <div key={date} style={{ marginBottom: 8 }}>
-                  <DateLabel date={date} accent={color} />
-                  {songs.filter(s => s.serviceDate === date).map((song, i) => (
-                    <ZamarSongRow key={`${date}-${i}`} song={song} index={i + 1} />
-                  ))}
+      {data && multiService && (
+        <div className="stack-16">
+          {dates.map(date => {
+            const isSunday = date === data.targetSunday;
+            return (
+              <div key={date}>
+                <div style={{
+                  fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+                  color: T.teal, paddingBottom: 5, borderBottom: `1px solid ${T.border}`, marginBottom: 10,
+                }}>
+                  {formatServiceDateShort(date)}
                 </div>
-              ))
-            ) : (
-              songs.map((song, i) => <ZamarSongRow key={i} song={song} index={i + 1} />)
-            )}
-          </div>
-        );
-      })}
+                {groups.map(group =>
+                  teamBlock(group, songs.filter(s => s.serviceDate === date && s.group === group), isSunday)
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="action-row">
         <SheetLink href={LINKS.zamar} label="Zamar Doc" />
         <RunButton route="/api/test/zamar-prep" label="Send Reminder" onDone={reload} />

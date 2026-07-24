@@ -4,7 +4,7 @@ import { sendTrackedEmail } from '../../core/email/mailer';
 import { formatEmailDate } from '../../core/email/reminder-template';
 import { readCellLink, readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
-import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
+import { formatISODate, getTargetSunday, getWeekWindow } from '../../core/scheduling/target-sunday';
 import { getPhonesForEmails } from '../../core/sms/contacts';
 import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { getServicesForWeek } from '../pw/document-reader';
@@ -59,19 +59,20 @@ async function getPWSongs(targetSunday: Date): Promise<ZamarSong[]> {
   return songs;
 }
 
-// ── HGH song ──────────────────────────────────────────────────────────────────
-// The HGH sheet logs the song ministered each Sunday.
-// For the upcoming Sunday (targetSunday) the entry may not be logged yet —
-// instead we read the most recently entered upcoming row.
-// We look for the first row after today that has a song title set.
+// ── HGH songs ─────────────────────────────────────────────────────────────────
+// The HGH sheet logs the song ministered each service. We read every row whose
+// date falls in the target Sunday's week (Mon→Sun) so a mid-week ministration is
+// compiled for band prep too, not just the Sunday. Each song is tagged with its
+// service date.
 
-async function getHGHSong(targetSunday: Date): Promise<ZamarSong | null> {
-  const targetISO = formatISODate(targetSunday);
+async function getHGHSongs(targetSunday: Date): Promise<ZamarSong[]> {
+  const { start, end } = getWeekWindow(targetSunday);
   const startRow = HGH_DATA_START_ROW + 1;
 
   // Start from row 3 (skip title row 1 and header row 2)
   const rows = await readSheetTab(HGH_SHEET_ID, HGH_SHEET_TAB, startRow);
 
+  const found: Array<{ title: string; serviceDate: string; rowNumber: number }> = [];
   for (const [index, row] of rows.entries()) {
     const rawDate = (row[HGH_COL_DATE] || '').trim();
     const rawTitle = (row[HGH_COL_TITLE] || '').trim();
@@ -80,63 +81,71 @@ async function getHGHSong(targetSunday: Date): Promise<ZamarSong | null> {
     if (rawTitle.toLowerCase() === 'not ministering') continue;
     if (rawTitle.toLowerCase() === 'online service') continue;
 
-    // Match exact Sunday date
     // HGH dates are stored as M/D/YYYY
     const parsedDate = parseMDYDate(rawDate);
-    if (parsedDate === targetISO) {
-      const sheetRowNumber = startRow + index;
+    if (!parsedDate || parsedDate < start || parsedDate > end) continue;
+
+    found.push({ title: rawTitle, serviceDate: parsedDate, rowNumber: startRow + index });
+  }
+
+  const songs = await Promise.all(
+    found.map(async ({ title, serviceDate, rowNumber }): Promise<ZamarSong> => {
       const titleCell = await readCellLink(
         HGH_SHEET_ID,
         HGH_SHEET_TAB,
         columnIndexToLetter(HGH_COL_TITLE),
-        sheetRowNumber
+        rowNumber
       );
+      return { title, youtubeUrl: titleCell.url || null, group: 'HGH', serviceDate };
+    })
+  );
 
-      return {
-        title: rawTitle,
-        youtubeUrl: titleCell.url || null,
-        group: 'HGH',
-      };
-    }
-  }
-
-  return null;
+  return songs.sort((a, b) => (a.serviceDate ?? '').localeCompare(b.serviceDate ?? ''));
 }
 
-// ── Celestial song ────────────────────────────────────────────────────────────
+// ── Celestial songs ───────────────────────────────────────────────────────────
 
-async function getCelestialSong(targetSunday: Date): Promise<ZamarSong | null> {
-  const targetISO = formatISODate(targetSunday);
+async function getCelestialSongs(targetSunday: Date): Promise<ZamarSong[]> {
+  const { start, end } = getWeekWindow(targetSunday);
   const startRow = 2;
 
   const rows = await readSheetTab(CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, startRow);
 
+  const found: Array<{ rawTitle: string; serviceDate: string; rowNumber: number }> = [];
   for (const [index, row] of rows.entries()) {
     const rawDate = (row[CELESTIAL_COL_DATE] || '').trim();
     if (!rawDate) continue;
 
     const parsedDate = parseMDYDate(rawDate);
-    if (parsedDate === targetISO) {
-      const sheetRowNumber = startRow + index;
+    if (!parsedDate || parsedDate < start || parsedDate > end) continue;
+
+    const rawTitle = (row[CELESTIAL_COL_SONG] || '').trim();
+    if (!rawTitle) continue;
+
+    found.push({ rawTitle, serviceDate: parsedDate, rowNumber: startRow + index });
+  }
+
+  const songs = await Promise.all(
+    found.map(async ({ rawTitle, serviceDate, rowNumber }): Promise<ZamarSong> => {
       const songCell = await readCellLink(
         CELESTIAL_SHEET_ID,
         CELESTIAL_SHEET_TAB,
         columnIndexToLetter(CELESTIAL_COL_SONG),
-        sheetRowNumber
+        rowNumber
       );
-      const rawTitle = (row[CELESTIAL_COL_SONG] || '').trim();
       const title = songCell.displayText.trim() || rawTitle;
-      if (!title) return null;
-
       return {
         title,
         youtubeUrl: songCell.url || (rawTitle.startsWith('http') ? rawTitle : null),
         group: 'Celestial',
+        serviceDate,
       };
-    }
-  }
+    })
+  );
 
-  return null;
+  return songs
+    .filter((s) => s.title)
+    .sort((a, b) => (a.serviceDate ?? '').localeCompare(b.serviceDate ?? ''));
 }
 
 // ── Main compiler ─────────────────────────────────────────────────────────────
@@ -149,20 +158,16 @@ export async function compileZamarPrepList(
 
   log(`Compiling Zamar prep list for ${targetISO}`, 'zamar');
 
-  const [pwSongs, hghSong, celestialSong] = await Promise.all([
+  const [pwSongs, hghSongs, celestialSongs] = await Promise.all([
     getPWSongs(sunday),
-    getHGHSong(sunday),
-    getCelestialSong(sunday),
+    getHGHSongs(sunday),
+    getCelestialSongs(sunday),
   ]);
 
-  const songs: ZamarSong[] = [
-    ...pwSongs,
-    ...(hghSong ? [hghSong] : []),
-    ...(celestialSong ? [celestialSong] : []),
-  ];
+  const songs: ZamarSong[] = [...pwSongs, ...hghSongs, ...celestialSongs];
 
   log(
-    `Zamar prep list: ${pwSongs.length} P&W songs, ${hghSong ? 1 : 0} HGH song, ${celestialSong ? 1 : 0} Celestial song`,
+    `Zamar prep list: ${pwSongs.length} P&W songs, ${hghSongs.length} HGH song(s), ${celestialSongs.length} Celestial song(s)`,
     'zamar'
   );
 
