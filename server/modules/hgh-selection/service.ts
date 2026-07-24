@@ -28,12 +28,12 @@ import { getAdminEmail, getHisGloryHeraldsEmails, HGH_COL_DATE, HGH_COL_TITLE, H
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { log } from '../../core/logging/log';
-import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
+import { formatISODate, getTargetSunday, getWeekWindow } from '../../core/scheduling/target-sunday';
 import { getPhonesForEmails } from '../../core/sms/contacts';
 import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
-import { isSheetEntryFilledForDate } from './checker';
+import { getDatedEntries, isSheetEntryFilledForDate } from './checker';
 import { buildHghSelectionReminderEmail } from './email';
-import type { HghSelectionStatus } from './types';
+import type { HghSelectionStatus, HghSelectionWeekStatus } from './types';
 
 const HGH_SELECTION_CONFIG = {
   sheetId: HGH_SHEET_ID,
@@ -48,6 +48,36 @@ export async function getHghSelectionStatus(targetSunday = getTargetSunday()): P
   return {
     songSelected,
     targetSunday: formatISODate(targetSunday),
+  };
+}
+
+/**
+ * Week-aware status for the dashboard. Mirrors how P&W works: scan this group's
+ * own source (the HGH "Current" sheet) for every dated row in the Monday→Sunday
+ * window leading up to the target Sunday, and report each one's selection
+ * status. Weeks with more than one service surface each date rather than only
+ * the Sunday. When the sheet has no dated row in the window, fall back to a
+ * single not-selected row for the target Sunday so the missing state still shows.
+ */
+export async function getHghSelectionWeekStatus(
+  targetSunday = getTargetSunday()
+): Promise<HghSelectionWeekStatus> {
+  const targetISO = formatISODate(targetSunday);
+  const { start, end } = getWeekWindow(targetSunday);
+  const entries = await getDatedEntries(HGH_SELECTION_CONFIG);
+
+  const inWindow = entries
+    .filter((e) => e.date >= start && e.date <= end)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const services = inWindow.length > 0
+    ? inWindow.map((e) => ({ date: e.date, songSelected: e.filled }))
+    : [{ date: targetISO, songSelected: false }];
+
+  return {
+    targetSunday: targetISO,
+    services,
+    songSelected: services.every((s) => s.songSelected),
   };
 }
 

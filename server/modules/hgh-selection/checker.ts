@@ -45,3 +45,33 @@ export async function isSheetEntryFilledForDate(
     return !!song && song.length > 0;
   });
 }
+
+export interface DatedEntry {
+  /** ISO date (yyyy-mm-dd) parsed from the sheet's date column. */
+  date: string;
+  /** True when the song column for this row is non-empty. */
+  filled: boolean;
+}
+
+/**
+ * Returns every row in the sheet that has a parseable date, paired with whether
+ * its song column is filled. Reads the tab once so callers can pull out a whole
+ * week's worth of dates without a request per date.
+ */
+export async function getDatedEntries(config: SheetConfig): Promise<DatedEntry[]> {
+  const rows = await getSheetRows(config.sheetId, config.tabName);
+  const entries: DatedEntry[] = [];
+
+  for (const row of rows) {
+    const rawDate = row[config.dateColumn]?.trim();
+    if (!rawDate) continue;
+
+    const cellISO = parseCellDateToISO(rawDate);
+    if (!cellISO) continue;
+
+    const song = row[config.songColumn]?.trim();
+    entries.push({ date: cellISO, filled: !!song && song.length > 0 });
+  }
+
+  return entries;
+}

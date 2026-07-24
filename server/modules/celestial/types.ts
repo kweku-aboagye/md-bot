@@ -12,3 +12,17 @@ export interface CelestialCheckResult {
   emailSent: boolean;
   ranAt: string;
 }
+
+export interface CelestialServiceStatus {
+  date: string;
+  event: string | null;
+  hymnSelected: boolean;
+  songLink: string | null;
+}
+
+export interface CelestialWeekStatus {
+  targetSunday: string;
+  services: CelestialServiceStatus[];
+  /** True only when every service in the week has a hymn selected. */
+  hymnSelected: boolean;
+}

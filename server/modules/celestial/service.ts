@@ -3,11 +3,11 @@ import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
 import { readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
-import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
+import { formatISODate, getTargetSunday, getWeekWindow } from '../../core/scheduling/target-sunday';
 import { getPhonesForEmails } from '../../core/sms/contacts';
 import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { buildCelestialMissingHymnEmail } from './email';
-import type { CelestialCheckResult, CelestialHymnRecord } from './types';
+import type { CelestialCheckResult, CelestialHymnRecord, CelestialWeekStatus } from './types';
 
 // ── Sheet reader ──────────────────────────────────────────────────────────────
 
@@ -77,6 +77,42 @@ export async function checkCelestialHymn(
     songLink: record?.songLink ?? null,
     emailSent: false, // updated by caller after email is sent
     ranAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Week-aware status for the dashboard. Mirrors how P&W works: scan this group's
+ * own source (the Celestial sheet) for every dated entry in the Monday→Sunday
+ * window leading up to the target Sunday, and report each one. Weeks with more
+ * than one service (e.g. a mid-week service plus the Sunday) surface each date
+ * rather than only the Sunday. When the sheet has no entry in the window, fall
+ * back to a single not-selected row for the target Sunday so the missing state
+ * still shows.
+ */
+export async function getCelestialWeekStatus(
+  targetSunday: Date = getTargetSunday()
+): Promise<CelestialWeekStatus> {
+  const targetISO = formatISODate(targetSunday);
+  const { start, end } = getWeekWindow(targetSunday);
+  const hymns = await fetchCelestialHymns();
+
+  const inWindow = hymns
+    .filter((h) => h.date >= start && h.date <= end)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const services = inWindow.length > 0
+    ? inWindow.map((h) => ({
+        date: h.date,
+        event: h.event,
+        hymnSelected: !!h.songLink,
+        songLink: h.songLink,
+      }))
+    : [{ date: targetISO, event: null, hymnSelected: false, songLink: null }];
+
+  return {
+    targetSunday: targetISO,
+    services,
+    hymnSelected: services.every((s) => s.hymnSelected),
   };
 }
 

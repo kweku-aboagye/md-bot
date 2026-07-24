@@ -35,3 +35,11 @@ export function formatServiceDate(iso: string) {
     weekday: "long", month: "long", day: "numeric", year: "numeric",
   });
 }
+
+// Compact form for per-service labels when a week has several services,
+// e.g. "Fri, Aug 1" — the year is implied by the dashboard's week context.
+export function formatServiceDateShort(iso: string) {
+  return new Date(iso + "T00:00:00").toLocaleDateString("en-US", {
+    weekday: "short", month: "short", day: "numeric",
+  });
+}

@@ -50,6 +50,7 @@ async function getPWSongs(targetSunday: Date): Promise<ZamarSong[]> {
           youtubeUrl: song.youtubeUrl,
           group: 'P&W',
           section: section.name,
+          serviceDate: svc.serviceDate,
         });
       }
     }

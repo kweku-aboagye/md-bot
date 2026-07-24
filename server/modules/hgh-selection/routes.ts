@@ -1,11 +1,11 @@
 import type { Express } from 'express';
 import { log } from '../../core/logging/log';
-import { checkHGHSelectionAndNotify, getHghSelectionStatus } from './service';
+import { checkHGHSelectionAndNotify, getHghSelectionWeekStatus } from './service';
 
 export function registerHghSelectionRoutes(app: Express) {
   app.get('/api/hgh-selection/status', async (_req, res) => {
     try {
-      res.json(await getHghSelectionStatus());
+      res.json(await getHghSelectionWeekStatus());
     } catch (err: any) {
       log(`HGH selection status error: ${err.message}`, 'hgh-selection.routes');
       res.status(500).json({ message: err.message || 'HGH selection status failed' });

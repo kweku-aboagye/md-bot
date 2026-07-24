@@ -17,6 +17,23 @@ export function formatISODate(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
+// The Monday→Sunday window leading up to (and including) the target Sunday —
+// the same range the P&W document reader uses to decide which dated services
+// belong to a given week. Returned as inclusive ISO date bounds so any module
+// can filter its own dated entries down to that week.
+export function getWeekWindow(
+  targetSunday: Date = getTargetSunday()
+): { start: string; end: string } {
+  const sunday = new Date(Date.UTC(
+    targetSunday.getUTCFullYear(),
+    targetSunday.getUTCMonth(),
+    targetSunday.getUTCDate()
+  ));
+  const monday = new Date(sunday);
+  monday.setUTCDate(sunday.getUTCDate() - 6);
+  return { start: formatISODate(monday), end: formatISODate(sunday) };
+}
+
 // Returns the ISO date of the First Friday of the month within the prep window
 // (on or after fromDate, and on or before targetSunday), or null.
 //
