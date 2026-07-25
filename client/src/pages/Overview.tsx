@@ -13,7 +13,7 @@ interface PwSection {
 }
 // The server returns one entry per service in the target Sunday's week, each
 // carrying its own date (a week can hold a Friday half-night plus the Sunday).
-interface PwService { serviceDate: string; rawHeader?: string | null; sections: PwSection[] }
+interface PwService { serviceDate: string; sections: PwSection[] }
 interface PwStatus  { targetSunday: string; services: PwService[] }
 
 interface CelestialServiceStatus { date: string; event?: string | null; hymnSelected: boolean; songLink?: string | null; title?: string | null }
