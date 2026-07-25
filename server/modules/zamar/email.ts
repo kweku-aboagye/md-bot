@@ -52,11 +52,8 @@ export function buildZamarPrepEmail(result: ZamarPrepResult): string {
   const formattedDate = formatSunday(result.targetSunday);
   const totalSongs = result.songs.length;
 
-  const pwSongs = result.songs.filter((song) => song.group === 'P&W');
-  const hghSongs = result.songs.filter((song) => song.group === 'HGH');
-  const celestialSongs = result.songs.filter((song) => song.group === 'Celestial');
-
-  function sectionBlock(label: string, songs: ZamarSong[], startIndex: number): string {
+  const teamBlock = (label: string, songs: ZamarSong[], showEmpty: boolean): string => {
+    if (songs.length === 0 && !showEmpty) return '';
     if (songs.length === 0) {
       return `
         <h3 style="margin: 24px 0 8px; font-size: 14px; color: #888888;">${escapeHtml(label)}</h3>
@@ -64,7 +61,7 @@ export function buildZamarPrepEmail(result: ZamarPrepResult): string {
       `;
     }
 
-    const rows = songs.map((song, index) => buildSongRow(song, startIndex + index)).join('');
+    const rows = songs.map((song, index) => buildSongRow(song, index)).join('');
 
     return `
       <h3 style="margin: 24px 0 8px; font-size: 14px; color: #555555; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(label)}</h3>
@@ -72,7 +69,34 @@ export function buildZamarPrepEmail(result: ZamarPrepResult): string {
         ${rows}
       </div>
     `;
-  }
+  };
+
+  // The services in the week: every date a song belongs to, plus the target
+  // Sunday. More than one → group the prep list by service, so a mid-week set is
+  // clearly separated from the Sunday's.
+  const dates = [...new Set([
+    ...result.songs.map((s) => s.serviceDate).filter((d): d is string => !!d),
+    result.targetSunday,
+  ])].sort();
+  const multiService = dates.length > 1;
+
+  const bodySections = multiService
+    ? dates.map((date) => {
+        const isSunday = date === result.targetSunday;
+        const forDate = (group: ZamarSong['group']) =>
+          result.songs.filter((s) => s.serviceDate === date && s.group === group);
+        return `
+          <h2 style="margin: 28px 0 4px; font-size: 15px; color: #1a1a1a; border-bottom: 1px solid #eeeeee; padding-bottom: 6px;">${escapeHtml(formatSunday(date))}</h2>
+          ${teamBlock('Praise & Worship', forDate('P&W'), isSunday)}
+          ${teamBlock('His Glory Heralds', forDate('HGH'), isSunday)}
+          ${teamBlock('Celestial Choir', forDate('Celestial'), isSunday)}
+        `;
+      }).join('')
+    : [
+        teamBlock('Praise & Worship', result.songs.filter((s) => s.group === 'P&W'), true),
+        teamBlock('His Glory Heralds', result.songs.filter((s) => s.group === 'HGH'), true),
+        teamBlock('Celestial Choir', result.songs.filter((s) => s.group === 'Celestial'), true),
+      ].join('');
 
   const noSongsWarning = totalSongs === 0
     ? `<div style="background: #fff3f3; border-left: 3px solid #ef4444; padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px;">
@@ -95,9 +119,7 @@ export function buildZamarPrepEmail(result: ZamarPrepResult): string {
 
                   ${noSongsWarning}
 
-                  ${sectionBlock('Praise & Worship', pwSongs, 0)}
-                  ${sectionBlock('His Glory Heralds', hghSongs, pwSongs.length)}
-                  ${sectionBlock('Celestial Choir', celestialSongs, pwSongs.length + hghSongs.length)}
+                  ${bodySections}
 
                   <p style="margin: 24px 0 0; font-size: 14px; line-height: 1.6; color: #666666; word-break: break-word;">
                     Songs with links: click to open the YouTube reference. Songs without links may still be added — check back if anything looks missing.

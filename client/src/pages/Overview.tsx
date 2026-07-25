@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type CSSProperties } from 'react';
-import { T, LINKS, formatServiceDate } from '../theme';
+import { T, LINKS, formatServiceDate, formatServiceDateShort } from '../theme';
 import {
   Card, SectionHeader, Badge, StatusDot,
   SheetLink, RunButton, LoadingState, ErrorState,
@@ -11,11 +11,16 @@ interface PwSection {
   leaderEmail: string | null;
   songs: Array<{ title: string; youtubeUrl?: string | null }>;
 }
-interface PwService { label?: string; sections: PwSection[] }
+// The server returns one entry per service in the target Sunday's week, each
+// carrying its own date (a week can hold a Friday half-night plus the Sunday).
+interface PwService { serviceDate: string; sections: PwSection[] }
 interface PwStatus  { targetSunday: string; services: PwService[] }
 
-interface CelestialStatus { hymnSelected: boolean; emailSent: boolean }
-interface HghSelectionStatus { songSelected: boolean; targetSunday: string }
+interface CelestialServiceStatus { date: string; event?: string | null; hymnSelected: boolean; songLink?: string | null; title?: string | null }
+interface CelestialStatus { targetSunday: string; services: CelestialServiceStatus[]; hymnSelected: boolean }
+
+interface HghServiceStatus { date: string; songSelected: boolean; title?: string | null }
+interface HghSelectionStatus { targetSunday: string; services: HghServiceStatus[]; songSelected: boolean }
 
 interface GapSong { title: string; url?: string | null }
 interface HghStatus {
@@ -26,8 +31,8 @@ interface HghStatus {
 }
 
 // Fix: server returns `youtubeUrl`, not `url`
-interface ZamarSong { title: string; youtubeUrl?: string | null; group: string; section?: string | null }
-interface ZamarStatus { songs: ZamarSong[]; emailSent: boolean }
+interface ZamarSong { title: string; youtubeUrl?: string | null; group: string; section?: string | null; serviceDate?: string | null }
+interface ZamarStatus { songs: ZamarSong[]; emailSent: boolean; targetSunday: string }
 
 // ── useFetch ──────────────────────────────────────────────────────────────────
 // Auto-retries up to 8 times with exponential backoff when the server isn't
@@ -84,16 +89,46 @@ function PWPanel({ targetSunday }: { targetSunday: string }) {
     missing_songs:  { color: T.red,    bg: T.redDim,    label: "No Songs" },
   };
 
-  const sections = data?.services?.flatMap(svc => svc.sections) ?? [];
+  const services = data?.services ?? [];
+  const sections = services.flatMap(svc => svc.sections);
   const complete = sections.filter(s => sectionStatus(s) === 'complete').length;
   const remindersSatisfied = sections.length > 0 && complete === sections.length;
+  const multiService = services.length > 1;
   const subtitle = loading
     ? 'Loading…'
     : data
       ? sections.length > 0
-        ? `${complete}/${sections.length} sections ready`
+        ? multiService
+          ? `${services.length} services this week`
+          : `Worship set for ${formatServiceDate(services[0].serviceDate)}`
         : 'No service data found'
       : 'Loading…';
+
+  const renderSection = (svc: PwService, sec: PwSection) => {
+    const st = sectionStatus(sec);
+    const s = statusMap[st];
+    const missingLinks = sec.songs.filter(song => !song.youtubeUrl).map(song => song.title);
+    return (
+      <div key={`${svc.serviceDate}-${sec.name}`} className="status-card">
+        <div className="status-card__row">
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="status-card__title">{sec.name}</div>
+            <div className="status-card__meta">
+              {sec.leaderEmail
+                ? <><StatusDot ok={true} />{sec.leaderEmail}</>
+                : <><StatusDot ok={false} /><span style={{ color: T.red }}>No leader</span></>}
+            </div>
+          </div>
+          <Badge color={s.color} bg={s.bg} label={s.label} />
+        </div>
+        {missingLinks.length > 0 && (
+          <div className="status-card__note" style={{ color: T.amber }}>
+            Missing links: {missingLinks.join(", ")}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Card>
@@ -109,33 +144,22 @@ function PWPanel({ targetSunday }: { targetSunday: string }) {
         </div>
       )}
       {data && sections.length > 0 && (
-        <div className="status-list">
-          {sections.map(sec => {
-            const st = sectionStatus(sec);
-            const s = statusMap[st];
-            const missingLinks = sec.songs.filter(song => !song.youtubeUrl).map(song => song.title);
-            return (
-              <div key={sec.name} className="status-card">
-                <div className="status-card__row">
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div className="status-card__title">{sec.name}</div>
-                    <div className="status-card__meta">
-                      {sec.leaderEmail
-                        ? <><StatusDot ok={true} />{sec.leaderEmail}</>
-                        : <><StatusDot ok={false} /><span style={{ color: T.red }}>No leader</span></>}
-                    </div>
-                  </div>
-                  <Badge color={s.color} bg={s.bg} label={s.label} />
+        multiService ? (
+          <div className="stack-16">
+            {services.map(svc => (
+              <div key={svc.serviceDate}>
+                <DateLabel date={svc.serviceDate} accent={T.indigo} />
+                <div className="status-list">
+                  {svc.sections.map(sec => renderSection(svc, sec))}
                 </div>
-                {missingLinks.length > 0 && (
-                  <div className="status-card__note" style={{ color: T.amber }}>
-                    Missing links: {missingLinks.join(", ")}
-                  </div>
-                )}
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="status-list">
+            {services[0].sections.map(sec => renderSection(services[0], sec))}
+          </div>
+        )
       )}
       <div className="action-row">
         <SheetLink href={LINKS.pw} label="Open P&W Doc" />
@@ -145,15 +169,67 @@ function PWPanel({ targetSunday }: { targetSunday: string }) {
   );
 }
 
+// ── Shared: compact dated sub-header (e.g. "FRI, AUG 1 · Half Night") ──────────
+function DateLabel({ date, accent, note }: { date: string; accent: string; note?: string | null }) {
+  return (
+    <div className="subsection-label" style={{ color: accent }}>
+      {formatServiceDateShort(date)}{note ? ` · ${note}` : ''}
+    </div>
+  );
+}
+
+// ── Shared: selection panel body (Celestial / Heralds) ────────────────────────
+// One service = the familiar single highlight card. More than one = a dated
+// block per service (only the dates this group actually has), listing the
+// picked song under each, so a mid-week service a group isn't part of never
+// shows up here.
+type SelectionService = { date: string; selected: boolean; title?: string | null; note?: string | null };
+
+function SelectionBody({ services, accent, selectedText, missingText }: {
+  services: SelectionService[];
+  accent: string;
+  selectedText: string;   // e.g. "Hymn selected"
+  missingText: string;    // e.g. "No hymn selected"
+}) {
+  // Every service renders the same card: a "…selected ✓" / "No … selected"
+  // status line with the picked song underneath. A dated sub-header is added on
+  // top only when the week has more than one service, so single-service weeks
+  // look exactly as before and Celestial and Heralds stay identical.
+  const multi = services.length > 1;
+
+  return (
+    <>
+      {services.map(svc => (
+        <div
+          key={svc.date}
+          className="status-card status-card--highlight"
+          style={{ '--status-color': svc.selected ? T.green : T.amber } as CSSProperties}
+        >
+          {multi && <DateLabel date={svc.date} accent={accent} note={svc.note} />}
+          <div className="status-card__title" style={{ color: svc.selected ? T.green : T.amber }}>
+            <StatusDot ok={svc.selected} />
+            {svc.selected ? `${selectedText} ✓` : missingText}
+          </div>
+          {svc.selected && svc.title && <div className="status-card__meta">{svc.title}</div>}
+        </div>
+      ))}
+    </>
+  );
+}
+
 // ── Panel 2: Celestial ────────────────────────────────────────────────────────
 function CelestialPanel({ targetSunday }: { targetSunday: string }) {
   const { data, loading, error, reload } = useFetch<CelestialStatus>('/api/celestial/status');
+  const services = data?.services ?? [];
+  const multi = services.length > 1;
   const subtitle = loading
     ? 'Loading…'
     : data
-      ? data.hymnSelected
-        ? `Hymn selected for ${formatServiceDate(targetSunday)}`
-        : `No hymn selected for ${formatServiceDate(targetSunday)}`
+      ? multi
+        ? `${services.length} services this week`
+        : data.hymnSelected
+          ? `Hymn selected for ${formatServiceDate(services[0]?.date ?? targetSunday)}`
+          : `No hymn selected for ${formatServiceDate(services[0]?.date ?? targetSunday)}`
       : 'Loading…';
 
   return (
@@ -161,20 +237,17 @@ function CelestialPanel({ targetSunday }: { targetSunday: string }) {
       <SectionHeader accent={T.purple} icon="🎼" title="Celestial Choir" subtitle={subtitle} />
       {loading && <LoadingState />}
       {error && <ErrorState message={error} onRetry={reload} />}
-      {data && (
-        <div
-          className="status-card status-card--highlight"
-          style={{ '--status-color': data.hymnSelected ? T.green : T.amber } as CSSProperties}
-        >
-          {data.hymnSelected ? (
-            <div className="status-card__title" style={{ color: T.green }}>
-              <StatusDot ok={true} />Hymn selected ✓
-            </div>
-          ) : (
-            <div className="status-card__title" style={{ color: T.amber }}>
-              <StatusDot ok={false} />No hymn selected for {formatServiceDate(targetSunday)}
-            </div>
-          )}
+      {data && services.length > 0 && (
+        <SelectionBody
+          services={services.map(s => ({ date: s.date, selected: s.hymnSelected, title: s.title ?? null, note: s.event ?? null }))}
+          accent={T.purple}
+          selectedText="Hymn selected"
+          missingText="No hymn selected"
+        />
+      )}
+      {data && services.length === 0 && (
+        <div style={{ fontSize: 13, color: T.muted, fontStyle: "italic", marginBottom: 12 }}>
+          No service data found for {formatServiceDate(targetSunday)}
         </div>
       )}
       <div className="action-row">
@@ -188,12 +261,16 @@ function CelestialPanel({ targetSunday }: { targetSunday: string }) {
 // ── Panel 3: HGH Selection ────────────────────────────────────────────────────
 function HGHSelectionPanel({ targetSunday }: { targetSunday: string }) {
   const { data, loading, error, reload } = useFetch<HghSelectionStatus>('/api/hgh-selection/status');
+  const services = data?.services ?? [];
+  const multi = services.length > 1;
   const subtitle = loading
     ? 'Loading…'
     : data
-      ? data.songSelected
-        ? `Song selected for ${formatServiceDate(targetSunday)}`
-        : `No song selected for ${formatServiceDate(targetSunday)}`
+      ? multi
+        ? `${services.length} services this week`
+        : data.songSelected
+          ? `Song selected for ${formatServiceDate(services[0]?.date ?? targetSunday)}`
+          : `No song selected for ${formatServiceDate(services[0]?.date ?? targetSunday)}`
       : 'Loading…';
 
   return (
@@ -201,20 +278,17 @@ function HGHSelectionPanel({ targetSunday }: { targetSunday: string }) {
       <SectionHeader accent={T.amber} icon="✨" title="His Glory Heralds" subtitle={subtitle} />
       {loading && <LoadingState />}
       {error && <ErrorState message={error} onRetry={reload} />}
-      {data && (
-        <div
-          className="status-card status-card--highlight"
-          style={{ '--status-color': data.songSelected ? T.green : T.amber } as CSSProperties}
-        >
-          {data.songSelected ? (
-            <div className="status-card__title" style={{ color: T.green }}>
-              <StatusDot ok={true} />Song selected ✓
-            </div>
-          ) : (
-            <div className="status-card__title" style={{ color: T.amber }}>
-              <StatusDot ok={false} />No song selected for {formatServiceDate(targetSunday)}
-            </div>
-          )}
+      {data && services.length > 0 && (
+        <SelectionBody
+          services={services.map(s => ({ date: s.date, selected: s.songSelected, title: s.title ?? null }))}
+          accent={T.amber}
+          selectedText="Song selected"
+          missingText="No song selected"
+        />
+      )}
+      {data && services.length === 0 && (
+        <div style={{ fontSize: 13, color: T.muted, fontStyle: "italic", marginBottom: 12 }}>
+          No service data found for {formatServiceDate(targetSunday)}
         </div>
       )}
       <div className="action-row">
@@ -223,6 +297,25 @@ function HGHSelectionPanel({ targetSunday }: { targetSunday: string }) {
         <RunButton route="/api/test/hgh-selection-reminder" label="Send Reminder" onDone={reload} disabled={!!data?.songSelected} />
       </div>
     </Card>
+  );
+}
+
+// ── Zamar song row ────────────────────────────────────────────────────────────
+function ZamarSongRow({ song, index }: { song: ZamarSong; index: number }) {
+  return (
+    <div className="song-row">
+      <span className="song-row__index">{index}</span>
+      {song.youtubeUrl
+        ? <a href={song.youtubeUrl} target="_blank" rel="noreferrer" className="song-row__title song-row__link">
+            {song.title}
+          </a>
+        : <span className="song-row__title">{song.title}</span>
+      }
+      <div className="song-row__meta">
+        {song.section && <span className="pill">{song.section}</span>}
+        {!song.youtubeUrl && <span className="warning-copy">no link</span>}
+      </div>
+    </div>
   );
 }
 
@@ -237,43 +330,66 @@ function ZamarPanel() {
     "Celestial": { color: T.purple, label: "Celestial Choir" },
   };
 
+  const songs = data?.songs ?? [];
+  // The services in the week: every date a song belongs to, plus the target
+  // Sunday (always the main service). More than one → group by service.
+  const dates = [...new Set([
+    ...songs.map(s => s.serviceDate).filter((d): d is string => !!d),
+    ...(data ? [data.targetSunday] : []),
+  ])].sort();
+  const multiService = dates.length > 1;
+
+  // Renders a team's songs. `showEmpty` prints the "Nothing submitted yet"
+  // placeholder — used for every team on a single-service week and for the
+  // Sunday (where all teams are expected), but not for mid-week services a team
+  // simply isn't part of.
+  const teamBlock = (group: typeof groups[number], subset: ZamarSong[], showEmpty: boolean) => {
+    if (subset.length === 0 && !showEmpty) return null;
+    const { color, label } = groupMeta[group];
+    return (
+      <div key={group} style={{ marginBottom: 12 }}>
+        <div className="subsection-label" style={{ color }}>{label}</div>
+        {subset.length === 0
+          ? <div style={{ fontSize: 12, color: T.muted, fontStyle: "italic" }}>Nothing submitted yet</div>
+          : subset.map((song, i) => <ZamarSongRow key={i} song={song} index={i + 1} />)}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <SectionHeader
         accent={T.teal} icon="🎹" title="Zamar Band"
-        subtitle="Compiles the worship set for band prep"
+        subtitle={data && multiService ? `${dates.length} services this week` : "Compiles the worship set for band prep"}
       />
       {loading && <LoadingState />}
       {error && <ErrorState message={error} onRetry={reload} />}
-      {data && groups.map(group => {
-        const songs = data.songs.filter(s => s.group === group);
-        const { color, label } = groupMeta[group];
-        return (
-          <div key={group} style={{ marginBottom: 14 }}>
-            <div className="subsection-label" style={{ color }}>
-              {label}
-            </div>
-            {songs.length === 0
-              ? <div style={{ fontSize: 12, color: T.muted, fontStyle: "italic" }}>Nothing submitted yet</div>
-              : songs.map((song, i) => (
-                <div key={i} className="song-row">
-                  <span className="song-row__index">{i + 1}</span>
-                  {song.youtubeUrl
-                    ? <a href={song.youtubeUrl} target="_blank" rel="noreferrer" className="song-row__title song-row__link">
-                        {song.title}
-                      </a>
-                    : <span className="song-row__title">{song.title}</span>
-                  }
-                  <div className="song-row__meta">
-                    {song.section && <span className="pill">{song.section}</span>}
-                    {!song.youtubeUrl && <span className="warning-copy">no link</span>}
-                  </div>
+
+      {data && !multiService && groups.map(group =>
+        teamBlock(group, songs.filter(s => s.group === group), true)
+      )}
+
+      {data && multiService && (
+        <div className="stack-16">
+          {dates.map(date => {
+            const isSunday = date === data.targetSunday;
+            return (
+              <div key={date}>
+                <div style={{
+                  fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+                  color: T.teal, paddingBottom: 5, borderBottom: `1px solid ${T.border}`, marginBottom: 10,
+                }}>
+                  {formatServiceDateShort(date)}
                 </div>
-              ))
-            }
-          </div>
-        );
-      })}
+                {groups.map(group =>
+                  teamBlock(group, songs.filter(s => s.serviceDate === date && s.group === group), isSunday)
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="action-row">
         <SheetLink href={LINKS.zamar} label="Zamar Doc" />
         <RunButton route="/api/test/zamar-prep" label="Send Reminder" onDone={reload} />

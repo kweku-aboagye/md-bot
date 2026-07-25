@@ -1,12 +1,12 @@
 import type { Express } from 'express';
 import { log } from '../../core/logging/log';
 import { getTargetSunday } from '../../core/scheduling/target-sunday';
-import { checkCelestialHymn, runCelestialCheck } from './service';
+import { getCelestialWeekStatus, runCelestialCheck } from './service';
 
 export function registerCelestialRoutes(app: Express) {
   app.get('/api/celestial/status', async (_req, res) => {
     try {
-      res.json(await checkCelestialHymn(getTargetSunday()));
+      res.json(await getCelestialWeekStatus(getTargetSunday()));
     } catch (err: any) {
       log(`Celestial status error: ${err.message}`, 'celestial.routes');
       res.status(500).json({ message: err.message || 'Celestial status failed' });
