@@ -20,8 +20,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ pinRequired: !!process.env.DASHBOARD_PIN });
   });
 
-  app.get('/api/schedule', (_req, res) => {
-    res.json(getNextScheduledRun());
+  app.get('/api/schedule', async (_req, res) => {
+    try {
+      res.json(await getNextScheduledRun());
+    } catch (err: any) {
+      log(`Schedule info error: ${err.message}`, 'http');
+      res.status(500).json({ message: err.message || 'Failed to load schedule info' });
+    }
   });
 
   app.post('/api/test/send-email', async (_req, res) => {
