@@ -34,19 +34,27 @@ export function getWeekWindow(
   return { start: formatISODate(monday), end: formatISODate(sunday) };
 }
 
+// The CT calendar date an instant falls on, as an ISO date string. Comparing
+// window bounds in CT rather than UTC keeps a date "current" until midnight CT.
+export function formatCtDate(date: Date): string {
+  return formatISODate(new Date(date.getTime() - CT_OFFSET_MS));
+}
+
 // Returns the ISO date of the First Friday of the month within the prep window
 // (on or after fromDate, and on or before targetSunday), or null.
 //
+// This is the *cadence* only — the date a Half Night would normally land on. It
+// is not evidence that one is actually happening; that has to come from the P&W
+// document (see getConfirmedHalfNight in modules/pw/service).
+//
 // Checks both fromDate's month and targetSunday's month because the window often
 // crosses a month boundary (e.g. fromDate=Apr 21, targetSunday=May 3 → May 1).
-// Both bounds are converted to CT calendar dates before comparison so the
-// Half Night banner stays visible until midnight CT rather than midnight UTC.
-export function getUpcomingHalfNight(
+export function getHalfNightCadenceDate(
   fromDate: Date = new Date(),
   targetSunday: Date = getTargetSunday()
 ): string | null {
-  const fromISO = formatISODate(new Date(fromDate.getTime() - CT_OFFSET_MS));
-  const targetISO = formatISODate(new Date(targetSunday.getTime() - CT_OFFSET_MS));
+  const fromISO = formatCtDate(fromDate);
+  const targetISO = formatCtDate(targetSunday);
 
   const fromCT = new Date(fromDate.getTime() - CT_OFFSET_MS);
   const monthsToCheck: Array<{ year: number; month: number }> = [

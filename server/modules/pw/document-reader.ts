@@ -1,4 +1,4 @@
-import type { SectionName, SectionData, WeekData } from './types';
+import type { SectionName, SectionData, ServiceHeader, WeekData } from './types';
 import { SECTION_NAMES } from './types';
 import { getDocsClient } from '../../core/google/auth';
 
@@ -113,6 +113,10 @@ const HEADER_RESIDUAL_WORDS = new Set([
   'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
   'sun', 'mon', 'tue', 'tues', 'wed', 'thu', 'thur', 'thurs', 'fri', 'sat',
   'service', 'week', 'of',
+  // A Half Night is a dated service like any other, and leaders usually label
+  // it by name next to the date ("Half Night - August 7, 2026"). Without these
+  // the line reads as a song entry and the service is skipped entirely.
+  'half', 'night',
 ]);
 
 function looksLikeDateHeader(text: string): boolean {
@@ -294,24 +298,21 @@ function parseSectionsFromParagraphs(paragraphs: ParagraphInfo[]): SectionData[]
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export async function getServicesForWeek(
-  documentId: string,
-  targetSunday: Date
-): Promise<WeekData[]> {
+interface DatedHeader {
+  index: number;
+  date: Date;
+  text: string;
+}
+
+async function readParagraphs(documentId: string): Promise<ParagraphInfo[]> {
   const docs = await getDocsClient();
   const doc = await docs.documents.get({ documentId });
-  const content = doc.data.body?.content || [];
-  const paragraphs = extractParagraphs(content);
+  return extractParagraphs(doc.data.body?.content || []);
+}
 
-  const sundayDate = new Date(Date.UTC(
-    targetSunday.getUTCFullYear(),
-    targetSunday.getUTCMonth(),
-    targetSunday.getUTCDate()
-  ));
-  const mondayDate = new Date(sundayDate);
-  mondayDate.setUTCDate(sundayDate.getUTCDate() - 6);
-
-  const datedHeaders: Array<{ index: number; date: Date; text: string }> = [];
+// Every dated service header in the document, in document order.
+function findDatedHeaders(paragraphs: ParagraphInfo[]): DatedHeader[] {
+  const datedHeaders: DatedHeader[] = [];
 
   for (let i = 0; i < paragraphs.length; i++) {
     const p = paragraphs[i];
@@ -327,6 +328,39 @@ export async function getServicesForWeek(
       datedHeaders.push({ index: i, date: d, text: p.text });
     }
   }
+
+  return datedHeaders;
+}
+
+// The dates the document itself says a service is happening, oldest first, with
+// no week filtering. Callers that need to confirm a service exists on a given
+// date (rather than read its songs) use this — it's the document's own record
+// of what's on, which is the only evidence a service is actually scheduled.
+export async function getServiceHeaders(
+  documentId: string
+): Promise<ServiceHeader[]> {
+  const paragraphs = await readParagraphs(documentId);
+
+  return findDatedHeaders(paragraphs)
+    .map((h) => ({ serviceDate: formatDateString(h.date), rawHeader: h.text }))
+    .sort((a, b) => a.serviceDate.localeCompare(b.serviceDate));
+}
+
+export async function getServicesForWeek(
+  documentId: string,
+  targetSunday: Date
+): Promise<WeekData[]> {
+  const paragraphs = await readParagraphs(documentId);
+
+  const sundayDate = new Date(Date.UTC(
+    targetSunday.getUTCFullYear(),
+    targetSunday.getUTCMonth(),
+    targetSunday.getUTCDate()
+  ));
+  const mondayDate = new Date(sundayDate);
+  mondayDate.setUTCDate(sundayDate.getUTCDate() - 6);
+
+  const datedHeaders = findDatedHeaders(paragraphs);
 
   const inRangeHeaders = datedHeaders.filter(
     (h) => h.date >= mondayDate && h.date <= sundayDate
