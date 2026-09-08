@@ -13,3 +13,7 @@ drizzle/
 *service-account*.json
 *-credentials*.json
 icgc-praise-temple-*.json
+
+# graphify: keep only the human-readable report; everything else regenerates
+graphify-out/*
+!graphify-out/GRAPH_REPORT.md
