@@ -98,10 +98,37 @@ export function buildZamarPrepEmail(result: ZamarPrepResult): string {
         teamBlock('Celestial Choir', result.songs.filter((s) => s.group === 'Celestial'), true),
       ].join('');
 
+  // Every group with nothing for the Sunday this list is locking. The window
+  // spans the whole week, so a group can have a mid-week song and still have
+  // submitted nothing for the Sunday — matching on group alone would call that
+  // complete while its Sunday block below reads "No songs submitted yet". Songs
+  // without a date are treated as the Sunday's, the same assumption the
+  // per-service grouping makes.
+  const missingGroups = ([
+    ['P&W', 'Praise & Worship'],
+    ['HGH', 'His Glory Heralds'],
+    ['Celestial', 'Celestial Choir'],
+  ] as Array<[ZamarSong['group'], string]>)
+    .filter(([group]) => !result.songs.some(
+      (s) => s.group === group && (s.serviceDate ?? result.targetSunday) === result.targetSunday
+    ))
+    .map(([, label]) => label);
+
+  const gapWarning = totalSongs > 0 && missingGroups.length > 0
+    ? `<div style="background: #fff8e6; border-left: 3px solid #f59e0b; padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px;">
+        <p style="margin: 0; font-weight: 600;">Nothing submitted by ${escapeHtml(missingGroups.join(' or '))} for ${escapeHtml(formattedDate)}.</p>
+        <p style="margin: 4px 0 0; color: #666; font-size: 14px;">${result.deadlinePassed
+          ? 'The deadline has passed, so these will not fill in on their own.'
+          : 'The deadline has not passed yet — these may still come in before the band rehearses.'}</p>
+      </div>`
+    : '';
+
   const noSongsWarning = totalSongs === 0
     ? `<div style="background: #fff3f3; border-left: 3px solid #ef4444; padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px;">
         <p style="margin: 0; font-weight: 600;">No songs have been submitted yet for this service.</p>
-        <p style="margin: 4px 0 0; color: #666; font-size: 14px;">This prep list will be empty until the other teams update their sheets.</p>
+        <p style="margin: 4px 0 0; color: #666; font-size: 14px;">${result.deadlinePassed
+          ? 'The deadline has passed with every sheet still empty — this needs chasing directly.'
+          : 'The deadline has not passed yet — this list will fill in as the teams update their sheets.'}</p>
       </div>`
     : '';
 
@@ -118,11 +145,14 @@ export function buildZamarPrepEmail(result: ZamarPrepResult): string {
                   <p style="margin: 0 0 24px; color: #666666; font-size: 13px; line-height: 1.5; word-break: break-word;">Tonight's rehearsal — ${totalSongs} song${totalSongs !== 1 ? 's' : ''} to prepare</p>
 
                   ${noSongsWarning}
+                  ${gapWarning}
 
                   ${bodySections}
 
                   <p style="margin: 24px 0 0; font-size: 14px; line-height: 1.6; color: #666666; word-break: break-word;">
-                    Songs with links: click to open the YouTube reference. Songs without links may still be added — check back if anything looks missing.
+                    Songs with links: click to open the YouTube reference. ${result.deadlinePassed
+                      ? 'This list is final — the deadline for adding to it has passed.'
+                      : 'This is a preview: the deadline has not passed yet, so songs may still be added.'}
                   </p>
 
                   <p style="color: #666666; font-size: 13px; line-height: 1.5; margin: 32px 0 0; border-top: 1px solid #eeeeee; padding-top: 16px;">— MD Bot 🤖</p>

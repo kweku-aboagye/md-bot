@@ -18,13 +18,6 @@ export interface WeekData {
   sections: SectionData[];
 }
 
-// A dated service header on its own, without the sections underneath it — the
-// document's record that a service is happening on that date.
-export interface ServiceHeader {
-  serviceDate: string;
-  rawHeader: string;
-}
-
 export type SectionStatus = 'complete' | 'missing_songs' | 'missing_links' | 'missing_leader';
 
 export interface SectionValidation {
@@ -38,7 +31,7 @@ export interface SectionValidation {
 
 export interface EmailSent {
   to: string | string[];
-  type: 'leader_reminder' | 'admin_missing_leader';
+  type: 'leader_reminder' | 'admin_missing_leader' | 'admin_missing_service';
   sectionName: string;
   sentAt: string;
 }

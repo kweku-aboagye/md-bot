@@ -27,6 +27,7 @@
 import { getAdminEmail, getHisGloryHeraldsEmails, HGH_COL_DATE, HGH_COL_TITLE, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
+import { buildDeadlineContext } from '../../core/email/reminder-template';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday, getWeekWindow } from '../../core/scheduling/target-sunday';
 import { getPhonesForEmails } from '../../core/sms/contacts';
@@ -94,7 +95,9 @@ export async function checkHGHSelectionAndNotify(
   const runId = createRunId();
   const adminEmail = getAdminEmail();
   const recipients = getHisGloryHeraldsEmails();
-  const status = await getHghSelectionStatus();
+  const targetSunday = getTargetSunday();
+  const deadline = buildDeadlineContext(targetSunday);
+  const status = await getHghSelectionStatus(targetSunday);
   log(`Checking HGH song selection for ${status.targetSunday}`, 'hgh-selection');
 
   if (status.songSelected) {
@@ -109,10 +112,10 @@ export async function checkHGHSelectionAndNotify(
 
   log(`No HGH song logged for ${status.targetSunday} - sending reminder`, 'hgh-selection');
 
-  const email = buildHghSelectionReminderEmail(status.targetSunday);
+  const email = buildHghSelectionReminderEmail(deadline);
   await sendTrackedEmail({
     to: recipients,
-    subject: `Action needed: His Glory Heralds has not logged a song for ${status.targetSunday}`,
+    subject: `${deadline.countdown} — His Glory Heralds song ${deadline.subjectTail}`,
     body: email.text,
     html: email.html,
     history: {
@@ -137,7 +140,7 @@ export async function checkHGHSelectionAndNotify(
     if (allPhones.length > 0) {
       await sendTrackedSms({
         to: allPhones,
-        body: `[MD Bot] Action needed: no song has been logged for His Glory Heralds this Sunday (${status.targetSunday}). Check your email for more details.`,
+        body: `[MD Bot] ${deadline.countdown}: no song logged for His Glory Heralds — ${deadline.subjectTail}. Check your email for more details.`,
         module: 'hgh-selection',
         trigger,
         runId,

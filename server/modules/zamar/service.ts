@@ -4,7 +4,7 @@ import { sendTrackedEmail } from '../../core/email/mailer';
 import { formatEmailDate } from '../../core/email/reminder-template';
 import { readCellLink, readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
-import { formatISODate, getTargetSunday, getWeekWindow } from '../../core/scheduling/target-sunday';
+import { formatISODate, getTargetSunday, getWeekWindow, isPastDeadline } from '../../core/scheduling/target-sunday';
 import { getPhonesForEmails } from '../../core/sms/contacts';
 import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
 import { getServicesForWeek } from '../pw/document-reader';
@@ -173,6 +173,7 @@ export async function compileZamarPrepList(
 
   return {
     targetSunday: targetISO,
+    deadlinePassed: isPastDeadline(new Date(), sunday),
     songs,
     emailSent: false, // updated by caller after sending
     ranAt: new Date().toISOString(),

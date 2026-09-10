@@ -23,7 +23,10 @@ Compiles the target Sunday songs from P&W, HGH, and Celestial, exposes that comb
 
 ## Schedule
 
-- Wednesday `12 PM CT`
+- Wednesday `12 PM CT` — this is the music deadline for the target Sunday, 11
+  days out. The list compiled here is final; leader reminders stop at this point.
+- the prep email names any group that submitted nothing, since after the deadline
+  an empty section is a gap to chase rather than one still filling in.
 
 ## Email Delivery
 

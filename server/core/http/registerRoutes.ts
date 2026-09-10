@@ -22,7 +22,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get('/api/schedule', async (_req, res) => {
     try {
-      res.json(await getNextScheduledRun());
+      res.json(getNextScheduledRun());
     } catch (err: any) {
       log(`Schedule info error: ${err.message}`, 'http');
       res.status(500).json({ message: err.message || 'Failed to load schedule info' });

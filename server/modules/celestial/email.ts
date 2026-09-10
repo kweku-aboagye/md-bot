@@ -1,22 +1,23 @@
 import { CELESTIAL_SHEET_ID } from '../../core/config/resources';
 import {
   buildReminderEmail,
-  formatEmailDate,
+  deadlineSentence,
+  type DeadlineContext,
 } from '../../core/email/reminder-template';
 import type { CelestialCheckResult } from './types';
 
-export function buildCelestialMissingHymnEmail(result: CelestialCheckResult) {
-  const formattedDate = formatEmailDate(result.targetSunday);
-
+export function buildCelestialMissingHymnEmail(
+  result: CelestialCheckResult,
+  deadline: DeadlineContext
+) {
   return buildReminderEmail({
     title: 'Celestial Choir: Hymn Not Yet Selected',
-    metaLine: `For ${formattedDate}`,
-    tone: 'warning',
-    highlightTitle: `No hymn has been logged for Celestial Choir this ${formattedDate}`,
+    tone: deadline.tone,
+    highlightTitle: `${deadline.countdown} — Celestial Choir has no hymn logged`,
     highlightLines: result.event ? [`Event: ${result.event}`] : [],
     paragraphs: [
-      'The Celestial Choir sheet does not show a hymn for the upcoming service.',
-      'Please follow up with the President or Organizing Secretary to confirm the selection.',
+      deadlineSentence(deadline),
+      'The Celestial Choir sheet does not show a hymn yet. Please follow up with the President or Organizing Secretary to confirm the selection.',
     ],
     action: {
       label: 'Open Celestial Choir sheet',

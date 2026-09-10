@@ -12,6 +12,7 @@ export type EmailHistoryModule =
 export type EmailHistoryKind =
   | 'pw_leader_reminder'
   | 'pw_admin_missing_leader'
+  | 'pw_admin_missing_service'
   | 'celestial_missing_hymn'
   | 'hgh_selection_reminder'
   | 'hgh_gap_report'

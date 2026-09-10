@@ -1,6 +1,7 @@
 import { CELESTIAL_COL_DATE, CELESTIAL_COL_EVENT, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, getAdminEmail, getCelestialChoirEmails } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
+import { buildDeadlineContext } from '../../core/email/reminder-template';
 import { readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday, getWeekWindow } from '../../core/scheduling/target-sunday';
@@ -136,13 +137,15 @@ export async function runCelestialCheck(
 ): Promise<CelestialCheckResult> {
   const runId = createRunId();
   const recipients = getCelestialChoirEmails();
-  const result = await checkCelestialHymn(getTargetSunday());
+  const targetSunday = getTargetSunday();
+  const deadline = buildDeadlineContext(targetSunday);
+  const result = await checkCelestialHymn(targetSunday);
   log(`Running Celestial hymn check (trigger: ${trigger}) for ${result.targetSunday}`, 'celestial');
 
   if (!result.hymnSelected) {
     try {
-      const email = buildCelestialMissingHymnEmail(result);
-      const subject = `Action needed: Celestial Choir has not selected a hymn for ${result.targetSunday}`;
+      const email = buildCelestialMissingHymnEmail(result, deadline);
+      const subject = `${deadline.countdown} — Celestial Choir hymn ${deadline.subjectTail}`;
       await sendTrackedEmail({
         to: recipients,
         subject,
@@ -177,7 +180,7 @@ export async function runCelestialCheck(
         if (allPhones.length > 0) {
           await sendTrackedSms({
             to: allPhones,
-            body: `[MD Bot] Action needed: no hymn has been logged for Celestial Choir this Sunday (${result.targetSunday}). Check your email for more details.`,
+            body: `[MD Bot] ${deadline.countdown}: no hymn logged for Celestial Choir — ${deadline.subjectTail}. Check your email for more details.`,
             module: 'celestial',
             trigger,
             runId,

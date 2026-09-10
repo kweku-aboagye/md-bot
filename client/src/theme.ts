@@ -43,3 +43,19 @@ export function formatServiceDateShort(iso: string) {
     weekday: "short", month: "short", day: "numeric",
   });
 }
+
+// The whole app is pinned to a fixed UTC−5 "Central" clock (see the server's
+// target-sunday.ts). The music deadline arrives as an ISO datetime, so shift it
+// into that clock before formatting — rendering it in the viewer's own timezone
+// would name the wrong day for anyone east of UTC.
+export function formatDeadline(isoDateTime: string) {
+  const ct = new Date(new Date(isoDateTime).getTime() - 5 * 60 * 60 * 1000);
+  return ct.toLocaleDateString("en-US", {
+    weekday: "short", month: "short", day: "numeric", timeZone: "UTC",
+  });
+}
+
+export function countdownLabel(daysLeft: number) {
+  if (daysLeft <= 0) return "due today";
+  return daysLeft === 1 ? "1 day left" : `${daysLeft} days left`;
+}
