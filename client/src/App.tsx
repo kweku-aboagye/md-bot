@@ -1,4 +1,4 @@
-import { useState, useEffect, type CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { T, formatServiceDate } from './theme';
 import { Contacts } from './pages/Contacts';
 import { Overview } from './pages/Overview';
@@ -26,20 +26,10 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('overview');
-  const [upcomingHalfNight, setUpcomingHalfNight] = useState<string | null>(null);
   const targetSunday = getTargetSunday();
   const brandStyle = {
     background: `linear-gradient(135deg, ${T.indigo}, ${T.purple})`,
   } satisfies CSSProperties;
-
-  useEffect(() => {
-    fetch('/api/schedule')
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (data?.upcomingHalfNight) setUpcomingHalfNight(data.upcomingHalfNight);
-      })
-      .catch(() => {});
-  }, []);
 
   return (
     <div className="app-shell">
@@ -56,14 +46,6 @@ export default function App() {
             Target —{" "}
             <span className="app-target-date-value">{formatServiceDate(targetSunday)}</span>
           </div>
-          {upcomingHalfNight && (
-            <div className="app-target-date" style={{ color: T.amber }}>
-              ⚡ Half Night —{" "}
-              <span className="app-target-date-value" style={{ color: T.amber }}>
-                {formatServiceDate(upcomingHalfNight)}
-              </span>
-            </div>
-          )}
         </div>
 
         <div className="app-tabs" role="tablist" aria-label="Dashboard views">

@@ -1,4 +1,4 @@
-import type { SectionName, SectionData, ServiceHeader, WeekData } from './types';
+import type { SectionName, SectionData, WeekData } from './types';
 import { SECTION_NAMES } from './types';
 import { getDocsClient } from '../../core/google/auth';
 
@@ -113,9 +113,9 @@ const HEADER_RESIDUAL_WORDS = new Set([
   'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
   'sun', 'mon', 'tue', 'tues', 'wed', 'thu', 'thur', 'thurs', 'fri', 'sat',
   'service', 'week', 'of',
-  // A Half Night is a dated service like any other, and leaders usually label
-  // it by name next to the date ("Half Night - August 7, 2026"). Without these
-  // the line reads as a song entry and the service is skipped entirely.
+  // Leaders often label a service by name next to the date ("Half Night -
+  // August 7, 2026"). Without these the line reads as a song entry and the
+  // service is skipped entirely.
   'half', 'night',
 ]);
 
@@ -310,7 +310,6 @@ async function readParagraphs(documentId: string): Promise<ParagraphInfo[]> {
   return extractParagraphs(doc.data.body?.content || []);
 }
 
-// Every dated service header in the document, in document order.
 function findDatedHeaders(paragraphs: ParagraphInfo[]): DatedHeader[] {
   const datedHeaders: DatedHeader[] = [];
 
@@ -336,16 +335,6 @@ function findDatedHeaders(paragraphs: ParagraphInfo[]): DatedHeader[] {
 // no week filtering. Callers that need to confirm a service exists on a given
 // date (rather than read its songs) use this — it's the document's own record
 // of what's on, which is the only evidence a service is actually scheduled.
-export async function getServiceHeaders(
-  documentId: string
-): Promise<ServiceHeader[]> {
-  const paragraphs = await readParagraphs(documentId);
-
-  return findDatedHeaders(paragraphs)
-    .map((h) => ({ serviceDate: formatDateString(h.date), rawHeader: h.text }))
-    .sort((a, b) => a.serviceDate.localeCompare(b.serviceDate));
-}
-
 export async function getServicesForWeek(
   documentId: string,
   targetSunday: Date

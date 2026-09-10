@@ -5,7 +5,7 @@ import { log } from '../logging/log';
 import { runCelestialCheck } from '../../modules/celestial/service';
 import { runHghReport } from '../../modules/hgh-gap/service';
 import { checkHGHSelectionAndNotify } from '../../modules/hgh-selection/service';
-import { getConfirmedHalfNight, runValidation } from '../../modules/pw/service';
+import { runValidation } from '../../modules/pw/service';
 import { runZamarPrep } from '../../modules/zamar/service';
 import { CT_OFFSET_HOURS, formatISODate, getTargetSunday } from './target-sunday';
 
@@ -30,19 +30,7 @@ function ctComponentsToUtc(year: number, month: number, day: number, hour: numbe
   return new Date(Date.UTC(year, month, day, hour + CT_OFFSET_HOURS, 0, 0, 0));
 }
 
-// The Half Night banner is a claim that a service is happening, so it only goes
-// out with the P&W document behind it. If the document can't be read we can't
-// prove anything — stay quiet rather than fall back to the calendar cadence.
-async function resolveHalfNight(now: Date, targetSunday: Date): Promise<string | null> {
-  try {
-    return await getConfirmedHalfNight(now, targetSunday);
-  } catch (err: any) {
-    log(`Half Night lookup failed, hiding banner: ${err.message}`, 'scheduler');
-    return null;
-  }
-}
-
-export async function getNextScheduledRun(): Promise<ScheduleInfo> {
+export function getNextScheduledRun(): ScheduleInfo {
   const now = new Date();
   const ct = toCtComponents(now);
 
@@ -70,7 +58,6 @@ export async function getNextScheduledRun(): Promise<ScheduleInfo> {
     adminEmail: getAdminEmail(),
     nextRunAt: nextRunUtc.toISOString(),
     targetSunday: formatISODate(targetSundayDate),
-    upcomingHalfNight: await resolveHalfNight(now, targetSundayDate),
     emailRouting: getEmailRoutingConfig(),
   };
 }

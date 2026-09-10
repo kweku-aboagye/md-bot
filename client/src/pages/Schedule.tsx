@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { T, formatServiceDateShort } from '../theme';
+import { T } from '../theme';
 import { Card, ErrorState, LoadingState, SectionHeader } from '../components/ui';
 
 const ROWS = [
@@ -31,7 +31,6 @@ interface ScheduleInfo {
   adminEmail: string | null;
   nextRunAt: string;
   targetSunday: string;
-  upcomingHalfNight: string | null;
   emailRouting: {
     pwIncomplete: string;
     pwMissingLeader: string[];
@@ -106,20 +105,6 @@ export function Schedule() {
   const { data, loading, error, reload } = useScheduleInfo();
   const emailRouting = data?.emailRouting;
 
-  // A Half Night has no cron of its own — the Mon–Sat checks cover it like any
-  // other dated service. It's listed only when the server has confirmed one in
-  // the P&W document, so the schedule never advertises a service that isn't on.
-  const rows = data?.upcomingHalfNight
-    ? [
-        ...ROWS,
-        {
-          days: formatServiceDateShort(data.upcomingHalfNight),
-          time: "Half Night",
-          modules: ["Praise & Worship Readiness Check"],
-          color: T.amber,
-        },
-      ]
-    : ROWS;
   const emails = [
     { trigger: "Praise & Worship missing songs or links", freq: "Mon–Sat 2×/day", color: T.indigo, to: emailRouting?.pwIncomplete ?? "Section leader" },
     { trigger: "Praise & Worship leader missing", freq: "Mon–Sat 2×/day", color: T.red, to: emailRouting?.pwMissingLeader.join(', ') ?? 'Not configured' },
@@ -134,7 +119,7 @@ export function Schedule() {
       <Card>
         <SectionHeader accent={T.text} icon="⏰" title="Cron Schedule" subtitle="All times Central · runs automatically, zero UI needed" />
         <div className="stack-8">
-          {rows.map((row, i) => (
+          {ROWS.map((row, i) => (
             <div
               key={i}
               className="schedule-row"
