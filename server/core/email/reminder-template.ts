@@ -1,4 +1,9 @@
-import { daysUntilDeadline, getMusicDeadline, getTargetSunday } from '../scheduling/target-sunday';
+import {
+  daysUntilDeadline,
+  getMusicDeadline,
+  getTargetSunday,
+  isPastDeadline,
+} from '../scheduling/target-sunday';
 
 export interface ReminderEmailAction {
   label: string;
@@ -79,7 +84,14 @@ export function formatEmailTime(isoDateTime: string): string {
 export interface DeadlineContext {
   /** Whole CT days until the band rehearses. 0 on the day, negative once past. */
   daysLeft: number;
-  /** "6 days left" · "1 day left" · "Last call" */
+  /**
+   * The band has already rehearsed. Scheduled runs never see this — the
+   * scheduler stops them at the deadline — but the manual /api/test/* routes are
+   * deliberately ungated, so a forced send on a Wednesday afternoon must not
+   * claim the rehearsal is still ahead.
+   */
+  passed: boolean;
+  /** "6 days left" · "1 day left" · "Last call" · "Deadline passed" */
   countdown: string;
   /** "Wed 9 Sep" — for subject lines. */
   dueShort: string;
@@ -96,21 +108,34 @@ export function buildDeadlineContext(
 ): DeadlineContext {
   const daysLeft = daysUntilDeadline(from, targetSunday);
   const deadline = getMusicDeadline(targetSunday);
+  const passed = isPastDeadline(from, targetSunday);
+  const dueShort = formatDeadlineShort(deadline);
 
   return {
     daysLeft,
-    countdown:
-      daysLeft <= 0 ? 'Last call' : daysLeft === 1 ? '1 day left' : `${daysLeft} days left`,
-    dueShort: formatDeadlineShort(deadline),
+    passed,
+    countdown: passed
+      ? 'Deadline passed'
+      : daysLeft <= 0
+        ? 'Last call'
+        : daysLeft === 1
+          ? '1 day left'
+          : `${daysLeft} days left`,
+    dueShort,
     dueLong: `${formatDeadlineLong(deadline)} at 12 PM`,
-    subjectTail: daysLeft <= 0 ? 'due today, 12 PM' : `due ${formatDeadlineShort(deadline)}`,
-    tone: daysLeft <= 0 ? 'critical' : daysLeft <= 2 ? 'warning' : 'info',
+    // Kept tense-neutral: the countdown carries whether the date is ahead or
+    // behind, so this reads correctly appended to both "songs" and "hymn".
+    subjectTail: !passed && daysLeft <= 0 ? 'due today, 12 PM' : `due ${dueShort}`,
+    tone: passed || daysLeft <= 0 ? 'critical' : daysLeft <= 2 ? 'warning' : 'info',
   };
 }
 
 // The band rehearsal is the only thing a leader has to act before, so every
 // reminder explains the deadline in the same sentence.
 export function deadlineSentence(deadline: DeadlineContext): string {
+  if (deadline.passed) {
+    return `The band rehearsed on ${deadline.dueLong} and their list is already final. Anything added now will not reach them.`;
+  }
   return deadline.daysLeft <= 0
     ? 'The band rehearses at 12 PM today. Anything added after that will not be in their list.'
     : `Songs are due ${deadline.dueLong}, when the band rehearses.`;

@@ -9,6 +9,12 @@ export interface ZamarSong {
 
 export interface ZamarPrepResult {
   targetSunday: string;
+  /**
+   * Whether the Wednesday band rehearsal has happened when this list was built.
+   * Always true for the scheduled noon run; false for a manual /api/test/zamar-prep
+   * fired earlier in the window, where the list is a preview rather than final.
+   */
+  deadlinePassed: boolean;
   songs: ZamarSong[];
   emailSent: boolean;
   ranAt: string;
