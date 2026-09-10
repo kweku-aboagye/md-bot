@@ -2,6 +2,7 @@ import { DOCUMENT_ID } from '../../core/config/resources';
 import {
   buildReminderEmail,
   deadlineSentence,
+  formatEmailDate,
   type DeadlineContext,
 } from '../../core/email/reminder-template';
 import type { SectionValidation } from './types';
@@ -24,6 +25,25 @@ export function buildAdminEmail(sectionName: string, deadline: DeadlineContext) 
       `The ${sectionName} section is still missing a leader email in the setlist document, so nobody is being reminded to pick its songs.`,
       deadlineSentence(deadline),
       'Please update the document so MD Bot 🤖 can send reminders to the correct person.',
+    ],
+    action: buildPwAction(),
+  });
+}
+
+// Unlike the leader reminders, this one names the service date: the whole point
+// is which heading is missing, so the date is the actionable part rather than a
+// distraction from the deadline.
+export function buildMissingServiceEmail(targetSunday: string, deadline: DeadlineContext) {
+  const formattedDate = formatEmailDate(targetSunday);
+
+  return buildReminderEmail({
+    title: 'No Service Section Yet',
+    tone: deadline.tone,
+    highlightTitle: `${deadline.countdown} — nothing in the document for ${formattedDate}`,
+    paragraphs: [
+      `The setlist document has no dated heading for ${formattedDate}, so there are no sections to check and no leaders are being reminded to pick songs.`,
+      deadlineSentence(deadline),
+      'Add the dated service heading and reminders will start going out on the next run.',
     ],
     action: buildPwAction(),
   });

@@ -4,7 +4,7 @@ import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
 import { buildDeadlineContext } from '../../core/email/reminder-template';
 import { getServicesForWeek } from './document-reader';
-import { validateSections, sendValidationEmails } from './validator';
+import { validateSections, sendMissingServiceEmail, sendValidationEmails } from './validator';
 import type { ValidationResult } from './types';
 
 export async function getPwStatus(targetSunday = getTargetSunday()) {
@@ -39,8 +39,20 @@ export async function runValidation(
     const weekServices = await getServicesForWeek(DOCUMENT_ID, targetSunday);
 
     if (weekServices.length === 0) {
+      // A missing heading always means it has not been written yet — a service
+      // is never skipped, so this is never the document correctly saying that
+      // nothing is on. That makes the alert unconditional. Staying quiet is the
+      // worst option here: the window is open, the deadline is approaching, and
+      // no leader will ever be reminded, because with no heading there are no
+      // sections to hang a reminder on.
       result.error = `No service sections found in the document for the week of Sunday ${targetDateStr}`;
       log(result.error, 'pw');
+      result.emailsSent = await sendMissingServiceEmail({
+        runId,
+        trigger,
+        targetSunday: targetDateStr,
+        deadline,
+      });
       return result;
     }
 

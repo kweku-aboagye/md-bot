@@ -26,6 +26,7 @@ export interface ScheduleInfo {
   emailRouting: {
     pwIncomplete: string;
     pwMissingLeader: string[];
+    pwMissingService: string[];
     celestial: string[];
     hghSelection: string[];
     hghGap: string[];

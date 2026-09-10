@@ -31,7 +31,7 @@ export interface SectionValidation {
 
 export interface EmailSent {
   to: string | string[];
-  type: 'leader_reminder' | 'admin_missing_leader';
+  type: 'leader_reminder' | 'admin_missing_leader' | 'admin_missing_service';
   sectionName: string;
   sentAt: string;
 }

@@ -38,6 +38,15 @@ Reads the P&W Google Doc for the target Sunday week, validates each required sec
 - reminders stop once the Wednesday `12 PM CT` music deadline passes — after the
   band has rehearsed, nothing a leader adds reaches them
 
+## No Service Section
+
+When the document has no dated heading inside the target week there are no
+sections to check, so no leader can be reminded. Rather than logging an error and
+sending nothing, the run notifies `PRAISE_AND_WORSHIP_EMAILS` (+ `ADMIN_EMAIL`) —
+the same routing as the missing-leader alert, since creating the dated heading is
+a job for whoever maintains the document — on the same deadline ladder and with
+the same cut-off at the Wednesday deadline as every other reminder.
+
 ## Persistence
 
 - writes actual sent reminder emails to the shared `email_history` table

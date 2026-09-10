@@ -48,6 +48,7 @@ interface ScheduleInfo {
   emailRouting: {
     pwIncomplete: string;
     pwMissingLeader: string[];
+    pwMissingService: string[];
     celestial: string[];
     hghSelection: string[];
     hghGap: string[];
@@ -122,6 +123,7 @@ export function Schedule() {
   const emails = [
     { trigger: "Praise & Worship missing songs or links", freq: "2×/day until Wed", color: T.indigo, to: emailRouting?.pwIncomplete ?? "Section leader" },
     { trigger: "Praise & Worship leader missing", freq: "2×/day until Wed", color: T.red, to: emailRouting?.pwMissingLeader.join(', ') ?? 'Not configured' },
+    { trigger: "No service section in the document", freq: "2×/day until Wed", color: T.red, to: emailRouting?.pwMissingService.join(', ') ?? 'Not configured' },
     { trigger: "Celestial Choir hymn not selected", freq: "2×/day until Wed", color: T.purple, to: emailRouting?.celestial.join(', ') ?? 'Not configured' },
     { trigger: "His Glory Heralds song not selected", freq: "2×/day until Wed", color: T.amber, to: emailRouting?.hghSelection.join(', ') ?? 'Not configured' },
     { trigger: "His Glory Heralds Gap Report", freq: "Every Monday", color: T.yellow, to: emailRouting?.hghGap.join(', ') ?? 'Not configured' },

@@ -36,6 +36,7 @@ export function getEmailRoutingConfig() {
   return {
     pwIncomplete: 'Section leader',
     pwMissingLeader: getPraiseAndWorshipEmails(),
+    pwMissingService: getPraiseAndWorshipEmails(),
     celestial: getCelestialChoirEmails(),
     hghSelection: getHisGloryHeraldsEmails(),
     hghGap: adminEmail ? [adminEmail] : [],
