@@ -1,5 +1,9 @@
 import { DOCUMENT_ID } from '../../core/config/resources';
-import { buildReminderEmail } from '../../core/email/reminder-template';
+import {
+  buildReminderEmail,
+  deadlineSentence,
+  type DeadlineContext,
+} from '../../core/email/reminder-template';
 import type { SectionValidation } from './types';
 
 const PW_SETLIST_URL = `https://docs.google.com/document/d/${DOCUMENT_ID}`;
@@ -11,30 +15,29 @@ function buildPwAction() {
   };
 }
 
-export function buildAdminEmail(sectionName: string, formattedDate: string) {
+export function buildAdminEmail(sectionName: string, deadline: DeadlineContext) {
   return buildReminderEmail({
     title: 'Missing Leader Assignment',
-    metaLine: `For ${formattedDate}`,
     tone: 'critical',
     highlightTitle: `No leader is assigned for ${sectionName}`,
     paragraphs: [
-      `The ${sectionName} section is still missing a leader email in the setlist document.`,
+      `The ${sectionName} section is still missing a leader email in the setlist document, so nobody is being reminded to pick its songs.`,
+      deadlineSentence(deadline),
       'Please update the document so MD Bot 🤖 can send reminders to the correct person.',
     ],
     action: buildPwAction(),
   });
 }
 
-export function buildLeaderEmail(validation: SectionValidation, formattedDate: string) {
+export function buildLeaderEmail(validation: SectionValidation, deadline: DeadlineContext) {
   if (validation.status === 'missing_songs') {
     return buildReminderEmail({
       title: 'Setlist Reminder',
-      metaLine: `For ${formattedDate}`,
-      tone: 'warning',
-      highlightTitle: `${validation.sectionName} still needs song selections`,
+      tone: deadline.tone,
+      highlightTitle: `${deadline.countdown} — ${validation.sectionName} still needs song selections`,
       paragraphs: [
-        `Your ${validation.sectionName} section does not have any songs listed yet.`,
-        'Please add your song selections and include YouTube links for each song in the setlist document.',
+        deadlineSentence(deadline),
+        `Your ${validation.sectionName} section does not have any songs listed yet. Add your selections and a YouTube link for each one.`,
       ],
       action: buildPwAction(),
     });
@@ -43,12 +46,11 @@ export function buildLeaderEmail(validation: SectionValidation, formattedDate: s
   if (validation.status === 'missing_links') {
     return buildReminderEmail({
       title: 'Setlist Reminder',
-      metaLine: `For ${formattedDate}`,
-      tone: 'warning',
-      highlightTitle: `${validation.sectionName} is missing YouTube links`,
+      tone: deadline.tone,
+      highlightTitle: `${deadline.countdown} — ${validation.sectionName} is missing YouTube links`,
       paragraphs: [
-        `Your ${validation.sectionName} section has songs entered, but some are still missing YouTube links.`,
-        'Please add the missing links in the setlist document so the team can prepare from the right references.',
+        deadlineSentence(deadline),
+        `Your ${validation.sectionName} section has songs entered, but some are still missing links. The team prepares from those references, so please add them.`,
       ],
       bullets: validation.songsWithoutLinks,
       action: buildPwAction(),
@@ -57,7 +59,6 @@ export function buildLeaderEmail(validation: SectionValidation, formattedDate: s
 
   return buildReminderEmail({
     title: 'Setlist Reminder',
-    metaLine: `For ${formattedDate}`,
     tone: 'info',
     highlightTitle: `${validation.sectionName} is ready`,
     paragraphs: [`No follow-up is needed for ${validation.sectionName}.`],

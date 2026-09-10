@@ -35,6 +35,8 @@ Reads the P&W Google Doc for the target Sunday week, validates each required sec
 
 - Mon–Sat `9 AM CT`
 - Mon–Sat `5 PM CT`
+- reminders stop once the Wednesday `12 PM CT` music deadline passes — after the
+  band has rehearsed, nothing a leader adds reaches them
 
 ## Persistence
 

@@ -27,6 +27,8 @@ Checks whether His Glory Heralds has logged a song for the shared target Sunday 
 
 - Mon–Sat `9 AM CT`
 - Mon–Sat `5 PM CT`
+- reminders stop once the Wednesday `12 PM CT` music deadline passes — after the
+  band has rehearsed, nothing a leader adds reaches them
 
 ## Email Delivery
 

@@ -1,3 +1,5 @@
+import { daysUntilDeadline, getMusicDeadline, getTargetSunday } from '../scheduling/target-sunday';
+
 export interface ReminderEmailAction {
   label: string;
   url: string;
@@ -64,6 +66,71 @@ export function formatEmailTime(isoDateTime: string): string {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
+  });
+}
+
+// ── Music deadline copy ───────────────────────────────────────────────────────
+// Everything a reminder says about the deadline is derived here so the three
+// modules can't drift: one countdown, one tone ladder, one way of writing the
+// date. The service date deliberately does not appear — it is 11 days past the
+// date that actually matters, and naming it made the deadline look further away
+// than it is.
+
+export interface DeadlineContext {
+  /** Whole CT days until the band rehearses. 0 on the day, negative once past. */
+  daysLeft: number;
+  /** "6 days left" · "1 day left" · "Last call" */
+  countdown: string;
+  /** "Wed 9 Sep" — for subject lines. */
+  dueShort: string;
+  /** "Wednesday 9 September at 12 PM" — for body copy. */
+  dueLong: string;
+  /** Trailing half of a subject line: "due Wed 9 Sep" · "due today, 12 PM". */
+  subjectTail: string;
+  tone: 'info' | 'warning' | 'critical';
+}
+
+export function buildDeadlineContext(
+  targetSunday: Date = getTargetSunday(),
+  from: Date = new Date()
+): DeadlineContext {
+  const daysLeft = daysUntilDeadline(from, targetSunday);
+  const deadline = getMusicDeadline(targetSunday);
+
+  return {
+    daysLeft,
+    countdown:
+      daysLeft <= 0 ? 'Last call' : daysLeft === 1 ? '1 day left' : `${daysLeft} days left`,
+    dueShort: formatDeadlineShort(deadline),
+    dueLong: `${formatDeadlineLong(deadline)} at 12 PM`,
+    subjectTail: daysLeft <= 0 ? 'due today, 12 PM' : `due ${formatDeadlineShort(deadline)}`,
+    tone: daysLeft <= 0 ? 'critical' : daysLeft <= 2 ? 'warning' : 'info',
+  };
+}
+
+// The band rehearsal is the only thing a leader has to act before, so every
+// reminder explains the deadline in the same sentence.
+export function deadlineSentence(deadline: DeadlineContext): string {
+  return deadline.daysLeft <= 0
+    ? 'The band rehearses at 12 PM today. Anything added after that will not be in their list.'
+    : `Songs are due ${deadline.dueLong}, when the band rehearses.`;
+}
+
+function formatDeadlineShort(deadline: Date): string {
+  return deadline.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+function formatDeadlineLong(deadline: Date): string {
+  return deadline.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
   });
 }
 

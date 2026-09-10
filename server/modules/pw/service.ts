@@ -2,6 +2,7 @@ import { DOCUMENT_ID } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday } from '../../core/scheduling/target-sunday';
+import { buildDeadlineContext } from '../../core/email/reminder-template';
 import { getServicesForWeek } from './document-reader';
 import { validateSections, sendValidationEmails } from './validator';
 import type { ValidationResult } from './types';
@@ -20,6 +21,7 @@ export async function runValidation(
 ): Promise<ValidationResult> {
   const targetSunday = getTargetSunday();
   const targetDateStr = formatISODate(targetSunday);
+  const deadline = buildDeadlineContext(targetSunday);
   const runId = createRunId();
 
   log(`Starting P&W validation for week of Sunday ${targetDateStr} (trigger: ${trigger})`, 'pw');
@@ -58,6 +60,7 @@ export async function runValidation(
           runId,
           trigger,
           targetSunday: result.targetSunday,
+          deadline,
         });
         allEmailsSent.push(...serviceEmails);
       }

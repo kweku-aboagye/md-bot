@@ -1,20 +1,18 @@
 import { HGH_SHEET_ID } from '../../core/config/resources';
 import {
   buildReminderEmail,
-  formatEmailDate,
+  deadlineSentence,
+  type DeadlineContext,
 } from '../../core/email/reminder-template';
 
-export function buildHghSelectionReminderEmail(targetSunday: string) {
-  const formattedDate = formatEmailDate(targetSunday);
-
+export function buildHghSelectionReminderEmail(deadline: DeadlineContext) {
   return buildReminderEmail({
     title: 'His Glory Heralds: Song Not Yet Logged',
-    metaLine: `For ${formattedDate}`,
-    tone: 'warning',
-    highlightTitle: `No song has been logged for His Glory Heralds this ${formattedDate}`,
+    tone: deadline.tone,
+    highlightTitle: `${deadline.countdown} — His Glory Heralds has no song logged`,
     paragraphs: [
-      'The His Glory Heralds Song Collection sheet does not show an entry for the upcoming service.',
-      'Please update the sheet with the planned song selection.',
+      deadlineSentence(deadline),
+      'The His Glory Heralds Song Collection sheet does not show an entry yet. Please update it with the planned song selection.',
     ],
     action: {
       label: 'Open His Glory Heralds Song Collection sheet',

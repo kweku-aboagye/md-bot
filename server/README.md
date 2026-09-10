@@ -100,12 +100,19 @@ Required for SMS delivery (all optional — SMS is silently skipped when unset):
 - `server/index.ts` boots Express, request logging, route registration, and cron startup
 - cron jobs only register when `NODE_ENV === "production"`
 - in production, the server also serves `client/dist` after API route registration
-- most modules use the shared target-Sunday rule in `core/scheduling/target-sunday.ts`:
-  the target is always the Sunday **two weeks out** from the current fixed UTC−5 date
-  (no DST adjustment), except on Sunday itself where it is the **next Sunday** (7 days
-  out). This means the planning window advances on **Monday morning UTC−5**, not on
-  Sunday — matching the rehearsal cycle where Sunday's rehearsal prepares for the
-  following week's service.
+- most modules use the shared target-Sunday rule in `core/scheduling/target-sunday.ts`.
+  One Sunday is collected for at a time, on a **Thursday→Wednesday** window in fixed
+  UTC−5 (no DST adjustment):
+  - the window **opens Thursday**, 17 days before its service
+  - it **closes at the music deadline**: Wednesday `12 PM CT`, 11 days before the
+    service, when the Zamar band rehearses and the setlist locks
+  - the team then rehearses that set on the Sunday 7 days before the service
+  Placing the whole of Wednesday inside the window it belongs to means the noon
+  Zamar run always compiles the Sunday whose deadline it is, with no dependence on
+  whether the roll happens before or after the cron fires.
+- `GET /api/schedule` reports this as two cycles: `collecting` (the Sunday leaders
+  are being reminded about, `null` between the Wednesday deadline and Thursday) and
+  `locked` (the Sunday already with the band).
 - successful outgoing ministry emails are persisted in the shared `email_history` table
 
 ## Core API Surface
@@ -130,6 +137,10 @@ Required for SMS delivery (all optional — SMS is silently skipped when unset):
 - Mon–Sat `9 AM CT`: P&W validation, Celestial check, HGH selection check
 - Mon–Sat `5 PM CT`: P&W validation, Celestial check, HGH selection check
 - Monday `9 AM CT`: HGH gap report
-- Wednesday `12 PM CT`: Zamar prep
+- Wednesday `12 PM CT`: Zamar prep — the music deadline
+
+The three leader-facing checks are skipped once the Wednesday deadline has passed,
+so in practice the Wednesday `5 PM` run does not send. Manual `/api/test/*` routes
+are not gated and can still force a send.
 
 Every scheduled run above uses the same mailer configuration as the manual dashboard trigger for that module.
