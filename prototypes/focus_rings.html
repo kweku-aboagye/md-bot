@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Focus Ring</title>
+<style>
+  :root { --bg:#0d0e12; --green:#00ff88; --red:#ff4d4d; --track:#1c1f26; --text:#f2f4f8; --muted:#7a8091; }
+  * { box-sizing:border-box; margin:0; }
+  html, body { height:100%; }
+  body { background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+         display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .screen { display:none; flex-direction:column; align-items:center; gap:3vmin; }
+  .screen.on { display:flex; }
+
+  /* Setup */
+  label { font-size:4vmin; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
+  #minutes { width:24vmin; font:inherit; font-size:9vmin; text-align:center; background:transparent; color:var(--text);
+             border:none; border-bottom:3px solid var(--green); outline:none; }
+  .hint { font-size:2.2vmin; color:var(--muted); }
+
+  /* Ring */
+  .wrap { position:relative; width:94vmin; height:94vmin; }
+  svg { width:100%; height:100%; transform:rotate(-90deg); overflow:visible; }
+  circle { fill:none; stroke-width:22; stroke-linecap:round; }
+  #track { stroke:var(--track); }
+  #ring { stroke:var(--green); filter:drop-shadow(0 0 12px var(--green)); transition:stroke .3s, filter .3s; }
+  .paused #ring { stroke:var(--red); filter:drop-shadow(0 0 16px var(--red)); animation:pulse 1.4s ease-in-out infinite; }
+  .done #ring { filter:drop-shadow(0 0 28px var(--green)); }
+  @keyframes pulse { 50% { opacity:.4; } }
+
+  .center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 22vmin; }
+  #time { font-size:15vmin; font-weight:700; font-variant-numeric:tabular-nums; line-height:1; }
+  #status { font-size:3vmin; letter-spacing:.15em; text-transform:uppercase; color:var(--green); margin-top:2vmin; line-height:1.5; }
+  .paused #status { color:var(--red); }
+  .done #time { font-size:12vmin; }
+</style>
+</head>
+<body>
+
+  <!-- 1. Setup: type minutes, press Enter -->
+  <div id="setup" class="screen on">
+    <label for="minutes">Minutes</label>
+    <input id="minutes" type="number" min="1" value="20" autofocus>
+    <p class="hint">Enter = start &nbsp;·&nbsp; Space = distraction on/off &nbsp;·&nbsp; F11 = full screen</p>
+  </div>
+
+  <!-- 2. The ring -->
+  <div id="session" class="screen">
+    <div class="wrap">
+      <svg viewBox="-50 -50 440 440">
+        <circle id="track" cx="170" cy="170" r="150"/>
+        <circle id="ring"  cx="170" cy="170" r="150"/>
+      </svg>
+      <div class="center">
+        <div id="time">00:00</div>
+        <div id="status">Focused</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const C = 2 * Math.PI * 150;             // ring circumference
+  $('ring').style.strokeDasharray = C;
+
+  let state = 'setup';                     // setup | running | paused | done
+  let total = 0, elapsed = 0, last = 0;    // ms; elapsed only grows while focused
+
+  const fmt = ms => {
+    const s = Math.ceil(ms / 1000);
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  };
+
+  function setState(s) {
+    state = s;
+    $('session').className = 'screen on ' + s;
+    $('status').textContent =
+      s === 'paused' ? 'Focus paused' :
+      s === 'done'   ? 'Block complete! Take a 5-minute break' : 'Focused';
+    if (s === 'done') $('time').textContent = '🎉';
+  }
+
+  function start() {
+    const m = parseFloat($('minutes').value);
+    if (!(m > 0)) return;
+    total = m * 60000; elapsed = 0; last = performance.now();
+    $('setup').className = 'screen';
+    $('minutes').blur();
+    setState('running');
+  }
+
+  function tick(now) {
+    if (state === 'running') {
+      elapsed += now - last;
+      if (elapsed >= total) { elapsed = total; setState('done'); }
+    }
+    last = now;
+    if (total) {
+      $('ring').style.strokeDashoffset = C * (1 - elapsed / total);
+      if (state !== 'done') $('time').textContent = fmt(total - elapsed);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  document.addEventListener('keydown', e => {
+    if (state === 'setup' && e.key === 'Enter') start();
+    else if ((state === 'running' || state === 'paused') && e.code === 'Space') {
+      e.preventDefault();
+      setState(state === 'running' ? 'paused' : 'running');
+    }
+    else if (state === 'done' && e.key === 'Enter') {   // back to setup for the next block
+      $('session').className = 'screen';
+      $('setup').className = 'screen on';
+      $('minutes').focus();
+      total = 0; state = 'setup';
+    }
+  });
+</script>
+</body>
+</html>
