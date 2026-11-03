@@ -1,3 +1,4 @@
+import { CENTRAL_TZ } from '../scheduling/central-time';
 import {
   daysUntilDeadline,
   getMusicDeadline,
@@ -71,6 +72,7 @@ export function formatEmailTime(isoDateTime: string): string {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
+    timeZone: CENTRAL_TZ,
   });
 }
 
@@ -146,7 +148,7 @@ function formatDeadlineShort(deadline: Date): string {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    timeZone: 'UTC',
+    timeZone: CENTRAL_TZ,
   });
 }
 
@@ -155,7 +157,7 @@ function formatDeadlineLong(deadline: Date): string {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
-    timeZone: 'UTC',
+    timeZone: CENTRAL_TZ,
   });
 }
 

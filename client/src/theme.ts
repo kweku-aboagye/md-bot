@@ -44,14 +44,15 @@ export function formatServiceDateShort(iso: string) {
   });
 }
 
-// The whole app is pinned to a fixed UTC−5 "Central" clock (see the server's
-// target-sunday.ts). The music deadline arrives as an ISO datetime, so shift it
-// into that clock before formatting — rendering it in the viewer's own timezone
-// would name the wrong day for anyone east of UTC.
+// The whole app runs on Central time (America/Chicago, DST-aware — see the
+// server's central-time.ts). The music deadline arrives as an ISO datetime, so
+// format it in that zone — rendering it in the viewer's own timezone would
+// name the wrong day for anyone far enough east or west.
+export const CENTRAL_TZ = "America/Chicago";
+
 export function formatDeadline(isoDateTime: string) {
-  const ct = new Date(new Date(isoDateTime).getTime() - 5 * 60 * 60 * 1000);
-  return ct.toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric", timeZone: "UTC",
+  return new Date(isoDateTime).toLocaleDateString("en-US", {
+    weekday: "short", month: "short", day: "numeric", timeZone: CENTRAL_TZ,
   });
 }
 

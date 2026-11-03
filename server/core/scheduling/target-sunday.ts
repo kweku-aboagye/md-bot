@@ -1,8 +1,9 @@
-// Hours to subtract from UTC to get the codebase's fixed local time (UTC−5).
-// Central Time is UTC−6 during CST (Nov–Mar) and UTC−5 during CDT (Mar–Nov).
-// This codebase runs on a fixed UTC−5 schedule and does not adjust for DST.
-export const CT_OFFSET_HOURS = 5; // positive; subtract from UTC
-const CT_OFFSET_MS = CT_OFFSET_HOURS * 60 * 60 * 1000;
+import { centralToUtc, formatCentralDate, toCentralParts } from './central-time';
+
+// All times here are Central wall-clock times (America/Chicago), DST-aware —
+// see central-time.ts. A "Sunday" is the instant of midnight Central on that
+// day. Midnight Central is always 05:00 or 06:00 UTC, so a Sunday's UTC
+// calendar date is its Central calendar date, which is what calendarDate reads.
 
 // The music for a service is due at the Zamar band rehearsal, which is always
 // the Wednesday 11 days before it: the band rehearses on the 9th for the 20th,
@@ -19,13 +20,22 @@ const TEAM_REHEARSAL_DAYS_BEFORE_SERVICE = 7;
 const WINDOW_OPENS_DAY = 4;                          // Thursday
 const WINDOW_OPENS_DAYS_BEFORE_SERVICE = 17;
 
+function calendarDate(day: Date) {
+  return { year: day.getUTCFullYear(), month: day.getUTCMonth(), day: day.getUTCDate() };
+}
+
+// Midnight Central `days` calendar days after `day` — DST-safe, unlike adding
+// a fixed 24h per day.
+function shiftDays(day: Date, days: number, hour = 0): Date {
+  const d = calendarDate(day);
+  return centralToUtc(d.year, d.month, d.day + days, hour);
+}
+
 export function getTargetSunday(fromDate: Date = new Date()): Date {
-  const ct = new Date(fromDate.getTime() - CT_OFFSET_MS);
+  const ct = toCentralParts(fromDate);
   // Days since the Thursday this collecting window opened (0 on Thursday).
-  const sinceOpen = (ct.getUTCDay() - WINDOW_OPENS_DAY + 7) % 7;
-  ct.setUTCDate(ct.getUTCDate() + WINDOW_OPENS_DAYS_BEFORE_SERVICE - sinceOpen);
-  ct.setUTCHours(0, 0, 0, 0);
-  return new Date(ct.getTime() + CT_OFFSET_MS);
+  const sinceOpen = (ct.weekday - WINDOW_OPENS_DAY + 7) % 7;
+  return centralToUtc(ct.year, ct.month, ct.day + WINDOW_OPENS_DAYS_BEFORE_SERVICE - sinceOpen);
 }
 
 export function formatISODate(date: Date): string {
@@ -35,23 +45,16 @@ export function formatISODate(date: Date): string {
 // The Wednesday 12 PM CT band rehearsal at which this Sunday's music locks.
 // After it, nothing a leader adds reaches the band, so nothing more is asked.
 export function getMusicDeadline(targetSunday: Date = getTargetSunday()): Date {
-  const ct = new Date(targetSunday.getTime() - CT_OFFSET_MS);
-  ct.setUTCDate(ct.getUTCDate() - DEADLINE_DAYS_BEFORE_SERVICE);
-  ct.setUTCHours(DEADLINE_HOUR_CT, 0, 0, 0);
-  return new Date(ct.getTime() + CT_OFFSET_MS);
+  return shiftDays(targetSunday, -DEADLINE_DAYS_BEFORE_SERVICE, DEADLINE_HOUR_CT);
 }
 
 // The Sunday the team rehearses this service's set, a week before the service.
 export function getTeamRehearsal(targetSunday: Date = getTargetSunday()): Date {
-  const rehearsal = new Date(targetSunday);
-  rehearsal.setUTCDate(rehearsal.getUTCDate() - TEAM_REHEARSAL_DAYS_BEFORE_SERVICE);
-  return rehearsal;
+  return shiftDays(targetSunday, -TEAM_REHEARSAL_DAYS_BEFORE_SERVICE);
 }
 
 export function addWeeks(sunday: Date, weeks: number): Date {
-  const shifted = new Date(sunday);
-  shifted.setUTCDate(shifted.getUTCDate() + weeks * 7);
-  return shifted;
+  return shiftDays(sunday, weeks * 7);
 }
 
 export function isPastDeadline(
@@ -93,5 +96,5 @@ export function getWeekWindow(
 // The CT calendar date an instant falls on, as an ISO date string. Comparing
 // window bounds in CT rather than UTC keeps a date "current" until midnight CT.
 export function formatCtDate(date: Date): string {
-  return formatISODate(new Date(date.getTime() - CT_OFFSET_MS));
+  return formatCentralDate(date);
 }

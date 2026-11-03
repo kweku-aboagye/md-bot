@@ -99,10 +99,14 @@ Required for SMS delivery (all optional — SMS is silently skipped when unset):
 
 - `server/index.ts` boots Express, request logging, route registration, and cron startup
 - cron jobs only register when `NODE_ENV === "production"`
+- all times are Central wall-clock time (`America/Chicago`), DST-aware: cron jobs are
+  registered with `timezone: 'America/Chicago'`, and date math goes through
+  `core/scheduling/central-time.ts`. A job set for 9 AM runs at 9 AM local in both
+  CST and CDT. Never hardcode a UTC offset.
 - in production, the server also serves `client/dist` after API route registration
 - most modules use the shared target-Sunday rule in `core/scheduling/target-sunday.ts`.
-  One Sunday is collected for at a time, on a **Thursday→Wednesday** window in fixed
-  UTC−5 (no DST adjustment):
+  One Sunday is collected for at a time, on a **Thursday→Wednesday** window in Central
+  time:
   - the window **opens Thursday**, 17 days before its service
   - it **closes at the music deadline**: Wednesday `12 PM CT`, 11 days before the
     service, when the Zamar band rehearses and the setlist locks

@@ -22,12 +22,12 @@ interface CycleInfo {
 // window opens on Thursday, 17 days before its service, and closes at the
 // Wednesday band rehearsal 11 days before it.
 function fallbackTargetSunday(): string {
-  const CT_OFFSET_MS = 5 * 60 * 60 * 1000;
-  const ct = new Date(Date.now() - CT_OFFSET_MS);
+  // Today's calendar date in Central time (en-CA formats as yyyy-mm-dd).
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+  const ct = new Date(`${today}T00:00:00Z`);
   const sinceOpen = (ct.getUTCDay() - 4 + 7) % 7;
   ct.setUTCDate(ct.getUTCDate() + 17 - sinceOpen);
-  ct.setUTCHours(0, 0, 0, 0);
-  return new Date(ct.getTime() + CT_OFFSET_MS).toISOString().split('T')[0];
+  return ct.toISOString().split('T')[0];
 }
 
 type Tab = 'overview' | 'schedule' | 'contacts';

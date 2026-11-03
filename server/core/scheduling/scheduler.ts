@@ -7,9 +7,9 @@ import { runHghReport } from '../../modules/hgh-gap/service';
 import { checkHGHSelectionAndNotify } from '../../modules/hgh-selection/service';
 import { runValidation } from '../../modules/pw/service';
 import { runZamarPrep } from '../../modules/zamar/service';
+import { CENTRAL_TZ, centralToUtc, toCentralParts } from './central-time';
 import {
   addWeeks,
-  CT_OFFSET_HOURS,
   daysUntilDeadline,
   formatISODate,
   getMusicDeadline,
@@ -18,26 +18,13 @@ import {
   isPastDeadline,
 } from './target-sunday';
 
-const CT_9AM_UTC = 9 + CT_OFFSET_HOURS;
-const CT_NOON_UTC = 12 + CT_OFFSET_HOURS;
-const CT_5PM_UTC = 17 + CT_OFFSET_HOURS;
-
-function toCtComponents(utcDate: Date) {
-  const ctMs = utcDate.getTime() - CT_OFFSET_HOURS * 60 * 60 * 1000;
-  const ctDate = new Date(ctMs);
-
-  return {
-    year: ctDate.getUTCFullYear(),
-    month: ctDate.getUTCMonth(),
-    day: ctDate.getUTCDate(),
-    weekday: ctDate.getUTCDay(),
-    hour: ctDate.getUTCHours(),
-  };
-}
-
-function ctComponentsToUtc(year: number, month: number, day: number, hour: number): Date {
-  return new Date(Date.UTC(year, month, day, hour + CT_OFFSET_HOURS, 0, 0, 0));
-}
+// Cron hours are Central wall-clock hours. Every job is registered with
+// timezone: America/Chicago, so node-cron resolves them against the timezone
+// database and they stay at 9 AM / noon / 5 PM local across DST changes.
+const CT_9AM = 9;
+const CT_NOON = 12;
+const CT_5PM = 17;
+const CRON_OPTIONS = { timezone: CENTRAL_TZ };
 
 function toPrepCycle(sunday: Date): PrepCycle {
   return {
@@ -49,7 +36,7 @@ function toPrepCycle(sunday: Date): PrepCycle {
 
 export function getNextScheduledRun(): ScheduleInfo {
   const now = new Date();
-  const ct = toCtComponents(now);
+  const ct = toCentralParts(now);
 
   let daysAhead = 0;
   let nextHourCT = 9;
@@ -68,7 +55,7 @@ export function getNextScheduledRun(): ScheduleInfo {
     }
   }
 
-  const nextRunUtc = ctComponentsToUtc(ct.year, ct.month, ct.day + daysAhead, nextHourCT);
+  const nextRunUtc = centralToUtc(ct.year, ct.month, ct.day + daysAhead, nextHourCT);
   const targetSundayDate = getTargetSunday(now);
 
   // Between Wednesday noon and Thursday nothing is being collected: this
@@ -112,37 +99,40 @@ export async function startScheduler() {
   };
 
   cron.schedule(
-    `0 ${CT_9AM_UTC},${CT_5PM_UTC} * * 1-6`,
-    whileCollecting('P&W scheduled validation', () => runValidation('scheduled'))
+    `0 ${CT_9AM},${CT_5PM} * * 1-6`,
+    whileCollecting('P&W scheduled validation', () => runValidation('scheduled')),
+    CRON_OPTIONS
   );
 
   cron.schedule(
-    `0 ${CT_9AM_UTC},${CT_5PM_UTC} * * 1-6`,
-    whileCollecting('Celestial hymn check', () => runCelestialCheck('scheduled'))
+    `0 ${CT_9AM},${CT_5PM} * * 1-6`,
+    whileCollecting('Celestial hymn check', () => runCelestialCheck('scheduled')),
+    CRON_OPTIONS
   );
 
-  cron.schedule(`0 ${CT_9AM_UTC} * * 1`, async () => {
+  cron.schedule(`0 ${CT_9AM} * * 1`, async () => {
     log('HGH gap report triggered (Monday)', 'scheduler');
     try {
       await runHghReport('scheduled');
     } catch (err: any) {
       log(`HGH gap report error: ${err.message}`, 'scheduler');
     }
-  });
+  }, CRON_OPTIONS);
 
   cron.schedule(
-    `0 ${CT_9AM_UTC},${CT_5PM_UTC} * * 1-6`,
-    whileCollecting('HGH selection check', () => checkHGHSelectionAndNotify('scheduled'))
+    `0 ${CT_9AM},${CT_5PM} * * 1-6`,
+    whileCollecting('HGH selection check', () => checkHGHSelectionAndNotify('scheduled')),
+    CRON_OPTIONS
   );
 
-  cron.schedule(`0 ${CT_NOON_UTC} * * 3`, async () => {
+  cron.schedule(`0 ${CT_NOON} * * 3`, async () => {
     log('Zamar prep list triggered (Wednesday)', 'scheduler');
     try {
       await runZamarPrep('scheduled');
     } catch (err: any) {
       log(`Zamar prep error: ${err.message}`, 'scheduler');
     }
-  });
+  }, CRON_OPTIONS);
 
   log(
     'Scheduler started: P&W+Celestial+HGH-Selection Mon-Sat 9AM/5PM CT until the Wed 12PM CT deadline | HGH Gap Mon 9AM CT | Zamar Wed 12PM CT',
