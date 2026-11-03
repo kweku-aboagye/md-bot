@@ -34,6 +34,7 @@
     "@types/pg": "^8.11.10",
     "concurrently": "^9.2.4",
     "drizzle-kit": "^0.31.4",
+    "railway": "^3.16.0",
     "tsx": "^4.20.5",
     "typescript": "5.6.3"
   }

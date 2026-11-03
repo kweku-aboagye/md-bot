@@ -1,8 +1,0 @@
-[build]
-buildCommand = "npm ci --include=dev && cd client && npm ci --include=dev && cd .. && npm run build"
-
-[deploy]
-startCommand = "npm start"
-healthcheckPath = "/health"
-healthcheckTimeout = 30
-restartPolicyType = "on_failure"
