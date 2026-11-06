@@ -1,6 +1,6 @@
 # MD Bot Repo Notes
 
-This repository is the `MD Bot` codebase, currently located at `/Users/kwekuaboagye/src/md-one`.
+This repository is the `MD Bot` codebase, currently located at `/Users/kwekuaboagye/src/md-bot`.
 
 Work only inside this repository unless the user explicitly asks for cross-repo work.
 
