@@ -1,7 +1,7 @@
 import { HGH_SHEET_ID } from '../../core/config/resources';
 import {
   buildReminderEmail,
-  deadlineSentence,
+  scheduleLines,
   type DeadlineContext,
 } from '../../core/email/reminder-template';
 
@@ -10,8 +10,8 @@ export function buildHghSelectionReminderEmail(deadline: DeadlineContext) {
     title: 'His Glory Heralds: Song Not Yet Logged',
     tone: deadline.tone,
     highlightTitle: `${deadline.countdown} — His Glory Heralds has no song logged`,
+    highlightLines: scheduleLines(deadline),
     paragraphs: [
-      deadlineSentence(deadline),
       'The His Glory Heralds Song Collection sheet does not show an entry yet. Please update it with the planned song selection.',
     ],
     action: {

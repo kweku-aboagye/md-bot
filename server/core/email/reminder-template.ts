@@ -3,6 +3,7 @@ import {
   daysUntilDeadline,
   getMusicDeadline,
   getTargetSunday,
+  getTeamRehearsal,
   isPastDeadline,
 } from '../scheduling/target-sunday';
 
@@ -67,6 +68,15 @@ export function formatEmailDate(isoDate: string): string {
   });
 }
 
+/** "Sun, Nov 29" — the short form used in subject lines and texts. */
+export function formatEmailDateShort(isoDate: string): string {
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 export function formatEmailTime(isoDateTime: string): string {
   return new Date(isoDateTime).toLocaleTimeString('en-US', {
     hour: 'numeric',
@@ -77,11 +87,13 @@ export function formatEmailTime(isoDateTime: string): string {
 }
 
 // ── Music deadline copy ───────────────────────────────────────────────────────
-// Everything a reminder says about the deadline is derived here so the three
+// Everything a reminder says about the dates is derived here so the three
 // modules can't drift: one countdown, one tone ladder, one way of writing the
-// date. The service date deliberately does not appear — it is 11 days past the
-// date that actually matters, and naming it made the deadline look further away
-// than it is.
+// dates. The countdown to the deadline stays the headline, and every reminder
+// lists the same three dates under it — songs due, team rehearsal, service —
+// because the service is 11 days past the deadline and leaders could not tell
+// which Sunday a bare due date was for. The Wednesday band rehearsal is left
+// out: that is the Zamar prep list's business, not the leaders'.
 
 export interface DeadlineContext {
   /** Whole CT days until the band rehearses. 0 on the day, negative once past. */
@@ -99,8 +111,14 @@ export interface DeadlineContext {
   dueShort: string;
   /** "Wednesday 9 September at 12 PM" — for body copy. */
   dueLong: string;
-  /** Trailing half of a subject line: "due Wed 9 Sep" · "due today, 12 PM". */
+  /** Trailing half of a subject line: "due Wed 9 Sep" · "due today, 12 PM CT". */
   subjectTail: string;
+  /** The team rehearsal a week before the service: "Sun 13 Sep" / "Sunday 13 September". */
+  rehearsalShort: string;
+  rehearsalLong: string;
+  /** The service itself: "Sun 20 Sep" / "Sunday 20 September". */
+  serviceShort: string;
+  serviceLong: string;
   tone: 'info' | 'warning' | 'critical';
 }
 
@@ -112,6 +130,7 @@ export function buildDeadlineContext(
   const deadline = getMusicDeadline(targetSunday);
   const passed = isPastDeadline(from, targetSunday);
   const dueShort = formatDeadlineShort(deadline);
+  const rehearsal = getTeamRehearsal(targetSunday);
 
   return {
     daysLeft,
@@ -124,23 +143,32 @@ export function buildDeadlineContext(
           ? '1 day left'
           : `${daysLeft} days left`,
     dueShort,
-    dueLong: `${formatDeadlineLong(deadline)} at 12 PM`,
+    dueLong: `${formatDeadlineLong(deadline)} at 12 PM CT`,
     // Kept tense-neutral: the countdown carries whether the date is ahead or
     // behind, so this reads correctly appended to both "songs" and "hymn".
-    subjectTail: !passed && daysLeft <= 0 ? 'due today, 12 PM' : `due ${dueShort}`,
+    subjectTail: !passed && daysLeft <= 0 ? 'due today, 12 PM CT' : `due ${dueShort}`,
+    rehearsalShort: formatDeadlineShort(rehearsal),
+    rehearsalLong: formatDeadlineLong(rehearsal),
+    serviceShort: formatDeadlineShort(targetSunday),
+    serviceLong: formatDeadlineLong(targetSunday),
     tone: passed || daysLeft <= 0 ? 'critical' : daysLeft <= 2 ? 'warning' : 'info',
   };
 }
 
-// The band rehearsal is the only thing a leader has to act before, so every
-// reminder explains the deadline in the same sentence.
-export function deadlineSentence(deadline: DeadlineContext): string {
-  if (deadline.passed) {
-    return `The band rehearsed on ${deadline.dueLong} and their list is already final. Anything added now will not reach them.`;
-  }
-  return deadline.daysLeft <= 0
-    ? 'The band rehearses at 12 PM today. Anything added after that will not be in their list.'
-    : `Songs are due ${deadline.dueLong}, when the band rehearses.`;
+// The three dates every reminder shows under its headline, in the order they
+// happen.
+export function scheduleLines(deadline: DeadlineContext): string[] {
+  return [
+    `Songs due: ${deadline.dueLong}`,
+    `Rehearsal: ${deadline.rehearsalLong}`,
+    `Service: ${deadline.serviceLong}`,
+  ];
+}
+
+// The same three dates for a text, to follow whatever is due:
+// "Praise songs " + "due Wed, Nov 18 at 12 PM CT. Rehearsal Sun, Nov 22, service Sun, Nov 29."
+export function smsSchedule(deadline: DeadlineContext): string {
+  return `due ${deadline.dueShort} at 12 PM CT. Rehearsal ${deadline.rehearsalShort}, service ${deadline.serviceShort}.`;
 }
 
 function formatDeadlineShort(deadline: Date): string {
