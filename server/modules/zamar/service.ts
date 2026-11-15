@@ -1,7 +1,7 @@
 import { CELESTIAL_COL_DATE, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, DOCUMENT_ID, getAdminEmail, getZamarBandEmails, HGH_COL_DATE, HGH_COL_TITLE, HGH_DATA_START_ROW, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
-import { formatEmailDate } from '../../core/email/reminder-template';
+import { formatEmailDate, formatEmailDateShort } from '../../core/email/reminder-template';
 import { readCellLink, readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday, getWeekWindow, isPastDeadline } from '../../core/scheduling/target-sunday';
@@ -221,7 +221,7 @@ export async function runZamarPrep(
       if (allPhones.length > 0) {
         await sendTrackedSms({
           to: allPhones,
-          body: `[MD Bot] Zamar Band prep list for Sunday (${result.targetSunday}) is ready — ${result.songs.length} songs. Check your email for more details.`,
+          body: `[MD Bot] Zamar Band prep list for the ${formatEmailDateShort(result.targetSunday)} service is ready — ${result.songs.length} songs. Check your email for more details.`,
           module: 'zamar',
           trigger,
           runId,

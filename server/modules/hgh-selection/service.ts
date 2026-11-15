@@ -27,7 +27,7 @@
 import { getAdminEmail, getHisGloryHeraldsEmails, HGH_COL_DATE, HGH_COL_TITLE, HGH_SHEET_ID, HGH_SHEET_TAB } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
-import { buildDeadlineContext } from '../../core/email/reminder-template';
+import { buildDeadlineContext, smsSchedule } from '../../core/email/reminder-template';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday, getWeekWindow } from '../../core/scheduling/target-sunday';
 import { getPhonesForEmails } from '../../core/sms/contacts';
@@ -115,7 +115,7 @@ export async function checkHGHSelectionAndNotify(
   const email = buildHghSelectionReminderEmail(deadline);
   await sendTrackedEmail({
     to: recipients,
-    subject: `${deadline.countdown} — His Glory Heralds song ${deadline.subjectTail}`,
+    subject: `${deadline.countdown} — His Glory Heralds song for ${deadline.serviceShort}`,
     body: email.text,
     html: email.html,
     history: {
@@ -140,7 +140,7 @@ export async function checkHGHSelectionAndNotify(
     if (allPhones.length > 0) {
       await sendTrackedSms({
         to: allPhones,
-        body: `[MD Bot] ${deadline.countdown}: no song logged for His Glory Heralds — ${deadline.subjectTail}. Check your email for more details.`,
+        body: `[MD Bot] ${deadline.countdown}: His Glory Heralds song ${smsSchedule(deadline)} Check your email for more details.`,
         module: 'hgh-selection',
         trigger,
         runId,

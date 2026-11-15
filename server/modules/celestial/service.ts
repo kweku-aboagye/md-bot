@@ -1,7 +1,7 @@
 import { CELESTIAL_COL_DATE, CELESTIAL_COL_EVENT, CELESTIAL_COL_SONG, CELESTIAL_SHEET_ID, CELESTIAL_SHEET_TAB, getAdminEmail, getCelestialChoirEmails } from '../../core/config/resources';
 import { createRunId } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
-import { buildDeadlineContext } from '../../core/email/reminder-template';
+import { buildDeadlineContext, smsSchedule } from '../../core/email/reminder-template';
 import { readSheetTab } from '../../core/google/sheets';
 import { log } from '../../core/logging/log';
 import { formatISODate, getTargetSunday, getWeekWindow } from '../../core/scheduling/target-sunday';
@@ -145,7 +145,7 @@ export async function runCelestialCheck(
   if (!result.hymnSelected) {
     try {
       const email = buildCelestialMissingHymnEmail(result, deadline);
-      const subject = `${deadline.countdown} — Celestial Choir hymn ${deadline.subjectTail}`;
+      const subject = `${deadline.countdown} — Celestial Choir hymn for ${deadline.serviceShort}`;
       await sendTrackedEmail({
         to: recipients,
         subject,
@@ -180,7 +180,7 @@ export async function runCelestialCheck(
         if (allPhones.length > 0) {
           await sendTrackedSms({
             to: allPhones,
-            body: `[MD Bot] ${deadline.countdown}: no hymn logged for Celestial Choir — ${deadline.subjectTail}. Check your email for more details.`,
+            body: `[MD Bot] ${deadline.countdown}: Celestial Choir hymn ${smsSchedule(deadline)} Check your email for more details.`,
             module: 'celestial',
             trigger,
             runId,

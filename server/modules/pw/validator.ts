@@ -1,7 +1,7 @@
 import { getAdminEmail, getPraiseAndWorshipEmails } from '../../core/config/resources';
 import type { EmailTrigger } from '../../core/email/history';
 import { sendTrackedEmail } from '../../core/email/mailer';
-import { formatEmailDate, type DeadlineContext } from '../../core/email/reminder-template';
+import { formatEmailDate, smsSchedule, type DeadlineContext } from '../../core/email/reminder-template';
 import { log } from '../../core/logging/log';
 import { getPhoneForEmail, getPhonesForEmails } from '../../core/sms/contacts';
 import { getAdminPhone, sendTrackedSms } from '../../core/sms/texter';
@@ -161,7 +161,7 @@ export async function sendValidationEmails(
         log(`No recipients configured — skipping missing leader notification for ${v.sectionName}`, 'validator');
       } else try {
         const email = buildAdminEmail(v.sectionName, deadline);
-        const subject = `Action needed: no leader for ${v.sectionName} — songs ${deadline.subjectTail}`;
+        const subject = `Action needed: no leader for ${v.sectionName} — songs for ${deadline.serviceShort}`;
         await sendTrackedEmail({
           to: pwRecipients,
           subject,
@@ -208,7 +208,7 @@ export async function sendValidationEmails(
           if (allPhones.length > 0) {
             await sendTrackedSms({
               to: allPhones,
-              body: `[MD Bot] Action needed: ${v.sectionName} has no leader and songs are ${deadline.subjectTail}. Check your email for more details.`,
+              body: `[MD Bot] Action needed: ${v.sectionName} has no leader. Songs ${smsSchedule(deadline)} Check your email for more details.`,
               module: 'pw',
               trigger: options.trigger,
               runId: options.runId,
@@ -225,7 +225,7 @@ export async function sendValidationEmails(
       let leaderEmailSent = false;
       try {
         const email = buildLeaderEmail(v, deadline);
-        const subject = `${deadline.countdown} — ${v.sectionName} songs ${deadline.subjectTail}`;
+        const subject = `${deadline.countdown} — ${v.sectionName} songs for ${deadline.serviceShort}`;
         await sendTrackedEmail({
           to: v.leaderEmail,
           subject,
@@ -267,7 +267,7 @@ export async function sendValidationEmails(
           if (leaderPhone) {
             await sendTrackedSms({
               to: leaderPhone,
-              body: `[MD Bot] ${deadline.countdown}: your ${v.sectionName} setlist is ${deadline.subjectTail}. Check your email for more details.`,
+              body: `[MD Bot] ${deadline.countdown}: ${v.sectionName} songs ${smsSchedule(deadline)} Check your email for more details.`,
               module: 'pw',
               trigger: options.trigger,
               runId: options.runId,
